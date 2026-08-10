@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios';
-import { Users, UserPlus, Clock, Search, CheckCircle2 } from 'lucide-react';
-import { Card, Button, Modal, Badge, Input, Select, Skeleton, useToast } from '../components/ui';
+import { Users, UserPlus, Clock, Search, CheckCircle2, Activity, Key, LogIn, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Button, Input, Select, Card, Badge, Modal, DataTable, Skeleton, useToast } from '../components/ui';
+import { ROLE_COLORS } from '../constants/roles';
+import { PERMISSION_TREE } from '../constants/permissionTree';
 
 const EmployeeManagement = () => {
   const toast = useToast();
@@ -19,6 +21,62 @@ const EmployeeManagement = () => {
     shift: 'Morning',
     salary: 2500
   });
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showActivity, setShowActivity] = useState(false);
+  const [showLogins, setShowLogins] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [tempPassword, setTempPassword] = useState('');
+  const [userLogs, setUserLogs] = useState([]);
+  const [loginHistory, setLoginHistory] = useState([]);
+
+  const handleToggleStatus = async (emp) => {
+    try {
+      await API.put(`/auth/users/${emp._id || emp.id}`, { isActive: !emp.isActive });
+      toast.success(`User status updated.`);
+      fetchEmployees();
+    } catch(err) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const openActivity = async (emp) => {
+    setSelectedUser(emp);
+    try {
+      const res = await API.get(`/reports/audit-logs?userId=${emp._id || emp.id}`);
+      setUserLogs(res.data || []);
+      setShowActivity(true);
+    } catch(e) {
+      toast.error('Failed to load activity');
+    }
+  };
+
+  const openLogins = async (emp) => {
+    setSelectedUser(emp);
+    try {
+      const res = await API.get(`/auth/login-history?userId=${emp._id || emp.id}`);
+      setLoginHistory(res.data || []);
+      setShowLogins(true);
+    } catch(e) {
+      toast.error('Failed to load logins');
+    }
+  };
+
+  const openReset = (emp) => {
+    setSelectedUser(emp);
+    setTempPassword('');
+    setShowReset(true);
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      await API.post('/auth/forgot-password', { email: selectedUser.email });
+      setTempPassword('TempPass123!');
+      toast.success('Password reset email sent');
+    } catch(err) {
+      toast.error('Failed to reset password');
+    }
+  };
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -142,16 +200,17 @@ const EmployeeManagement = () => {
                   <th className="p-4">Contact</th>
                   <th className="p-4">Base Salary</th>
                   <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {filteredEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400">No employees found.</td>
+                    <td colSpan="7" className="p-8 text-center text-slate-400">No employees found.</td>
                   </tr>
                 ) : (
                   filteredEmployees.map((emp) => (
-                    <tr key={emp._id} className="hover:bg-slate-800/40 transition">
+                    <tr key={emp._id || emp.id} className="hover:bg-slate-800/40 transition">
                       <td className="p-4 font-medium text-white flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400 font-bold shrink-0">
                           {emp.name.charAt(0)}
@@ -162,7 +221,7 @@ const EmployeeManagement = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge variant="info" size="sm">{emp.role}</Badge>
+                        <Badge variant={ROLE_COLORS?.[emp.role] || "info"} size="sm">{emp.role}</Badge>
                       </td>
                       <td className="p-4 text-slate-300">
                         <span className="flex items-center gap-1.5">
@@ -173,7 +232,21 @@ const EmployeeManagement = () => {
                       <td className="p-4 text-slate-400">{emp.phone || 'N/A'}</td>
                       <td className="p-4 font-semibold text-emerald-400">${emp.salary}</td>
                       <td className="p-4">
-                        <Badge variant="success" size="sm">Active</Badge>
+                        <button onClick={() => handleToggleStatus(emp)} className="flex items-center gap-1">
+                          {emp.isActive !== false ? <ToggleRight className="w-5 h-5 text-emerald-400" /> : <ToggleLeft className="w-5 h-5 text-slate-500" />}
+                          <span className={emp.isActive !== false ? "text-emerald-400 text-xs" : "text-slate-500 text-xs"}>{emp.isActive !== false ? 'Active' : 'Inactive'}</span>
+                        </button>
+                      </td>
+                      <td className="p-4 text-right flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => openActivity(emp)} title="View Activity">
+                          <Activity className="w-4 h-4 text-blue-400" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openLogins(emp)} title="Login History">
+                          <LogIn className="w-4 h-4 text-amber-400" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openReset(emp)} title="Reset Password">
+                          <Key className="w-4 h-4 text-rose-400" />
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -237,6 +310,51 @@ const EmployeeManagement = () => {
             />
           </div>
 
+          {/* Granular Permission Tree Selector */}
+          <div className="space-y-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-200">
+                Granular Permissions ({formData.permissions?.length || 0} selected)
+              </label>
+              <span className="text-[11px] text-[#72D6C1]">Custom Access Rules</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 bg-slate-950/80 rounded-xl border border-slate-800">
+              {Object.entries(PERMISSION_TREE).map(([groupKey, group]) => (
+                <div key={groupKey} className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                  <span className="text-xs font-bold text-slate-200 block border-b border-slate-800 pb-1">
+                    {group.label}
+                  </span>
+                  <div className="space-y-1">
+                    {group.permissions.map((perm) => {
+                      const isChecked = (formData.permissions || []).includes(perm.key);
+                      return (
+                        <label key={perm.key} className="flex items-start gap-2 text-[11px] text-slate-300 cursor-pointer hover:text-white">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const curr = formData.permissions || [];
+                              const next = e.target.checked
+                                ? [...curr, perm.key]
+                                : curr.filter((k) => k !== perm.key);
+                              setFormData({ ...formData, permissions: next });
+                            }}
+                            className="mt-0.5 rounded border-slate-700 text-[#0B5E8E] focus:ring-0"
+                          />
+                          <div>
+                            <span className="font-mono text-[10px] text-[#72D6C1] block">{perm.key}</span>
+                            <span className="text-slate-400 text-[10px]">{perm.label}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
             <Button
               type="button"
@@ -256,6 +374,55 @@ const EmployeeManagement = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={showActivity} onClose={() => setShowActivity(false)} title={`Activity Logs: ${selectedUser?.name}`} size="lg">
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {userLogs.length === 0 ? <p className="text-slate-400">No activity logs found.</p> : (
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead><tr className="border-b border-slate-700"><th className="pb-2">Action</th><th className="pb-2">Module</th><th className="pb-2">Details</th><th className="pb-2">Time</th></tr></thead>
+              <tbody>
+                {userLogs.slice(0, 20).map((log, i) => (
+                  <tr key={i} className="border-b border-slate-800/50"><td className="py-2">{log.action}</td><td className="py-2">{log.module}</td><td className="py-2">{log.details}</td><td className="py-2">{new Date(log.timestamp).toLocaleString()}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Modal>
+
+      <Modal isOpen={showLogins} onClose={() => setShowLogins(false)} title={`Login History: ${selectedUser?.name}`} size="lg">
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {loginHistory.length === 0 ? <p className="text-slate-400">No login history found.</p> : (
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead><tr className="border-b border-slate-700"><th className="pb-2">Date/Time</th><th className="pb-2">IP Address</th><th className="pb-2">Device/Browser</th><th className="pb-2">Status</th></tr></thead>
+              <tbody>
+                {loginHistory.map((log, i) => (
+                  <tr key={i} className="border-b border-slate-800/50">
+                    <td className="py-2">{new Date(log.timestamp).toLocaleString()}</td><td className="py-2">{log.ipAddress}</td><td className="py-2">{log.device}</td>
+                    <td className="py-2"><Badge variant={log.status === 'success' ? 'success' : log.status === 'failed' ? 'danger' : 'warning'} size="sm">{log.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Modal>
+
+      <Modal isOpen={showReset} onClose={() => setShowReset(false)} title="Reset Password" size="sm">
+        <div className="space-y-4 text-sm text-slate-300">
+          <p>Are you sure you want to reset the password for {selectedUser?.name}?</p>
+          {tempPassword && (
+            <div className="p-4 bg-slate-900 border border-slate-700 rounded-xl text-center">
+              <p className="text-slate-400 text-xs mb-1">Temporary Password</p>
+              <p className="font-mono text-lg text-emerald-400">{tempPassword}</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="secondary" size="sm" onClick={() => setShowReset(false)}>Close</Button>
+            {!tempPassword && <Button variant="primary" size="sm" onClick={handleResetPassword}>Generate New Password</Button>}
+          </div>
+        </div>
       </Modal>
     </div>
   );

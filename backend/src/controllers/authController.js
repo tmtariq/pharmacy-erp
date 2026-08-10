@@ -5,32 +5,89 @@ import Pharmacy from '../models/Pharmacy.js';
 import Branch from '../models/Branch.js';
 import AuditLog from '../models/AuditLog.js';
 import { generateTokens } from '../utils/generateTokens.js';
+import LoginHistory from '../models/LoginHistory.js';
 
-// Default Role Permissions Matrix
+// Helper: record login event
+const recordLogin = async (userId, pharmacyId, email, req, status, failureReason = '') => {
+  try {
+    await LoginHistory.create({
+      user: userId,
+      pharmacy: pharmacyId || null,
+      email,
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || '',
+      userAgent: req.headers['user-agent'] || '',
+      status,
+      failureReason
+    });
+  } catch (e) {
+    console.error('LoginHistory record error:', e.message);
+  }
+};
+
+// Hierarchical Permission Tree Token Definitions
+export const ALL_PERMISSIONS = {
+  sales: ['sales.view', 'sales.create', 'sales.edit', 'sales.cancel', 'sales.refund'],
+  inventory: ['inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer', 'inventory.delete'],
+  medicines: ['medicines.view', 'medicines.create', 'medicines.edit', 'medicines.delete'],
+  staff: ['staff.view', 'staff.create', 'staff.edit', 'staff.delete'],
+  reports: ['reports.sales', 'reports.inventory', 'reports.financial', 'reports.profit_loss']
+};
+
+// Default Role Permissions Matrix based on Hierarchical Tree
 export const DEFAULT_ROLE_PERMISSIONS = {
-  Owner: ['*'], // Master override
+  SuperAdmin: ['*'],
+  Owner: ['*'],
   Admin: [
-    'medicines:create', 'medicines:read', 'medicines:update', 'medicines:delete',
-    'inventory:read', 'inventory:write', 'sales:pos', 'sales:read',
-    'purchases:read', 'purchases:write', 'transfers:manage',
-    'customers:read', 'customers:write', 'reports:read', 'users:read', 'users:write', 'branches:read'
+    'sales.view', 'sales.create', 'sales.edit', 'sales.cancel', 'sales.refund',
+    'inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer', 'inventory.delete',
+    'medicines.view', 'medicines.create', 'medicines.edit', 'medicines.delete',
+    'staff.view', 'staff.create', 'staff.edit', 'staff.delete',
+    'reports.sales', 'reports.inventory', 'reports.financial', 'reports.profit_loss'
+  ],
+  'Branch Manager': [
+    'sales.view', 'sales.create', 'sales.edit', 'sales.cancel', 'sales.refund',
+    'inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer',
+    'medicines.view', 'medicines.create', 'medicines.edit',
+    'staff.view', 'staff.create', 'staff.edit',
+    'reports.sales', 'reports.inventory'
   ],
   BranchManager: [
-    'medicines:read', 'inventory:read', 'inventory:write',
-    'sales:pos', 'sales:read', 'purchases:read', 'purchases:write',
-    'transfers:manage', 'customers:read', 'customers:write',
-    'reports:read', 'users:read', 'users:write'
+    'sales.view', 'sales.create', 'sales.edit', 'sales.cancel', 'sales.refund',
+    'inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer',
+    'medicines.view', 'medicines.create', 'medicines.edit',
+    'staff.view', 'staff.create', 'staff.edit',
+    'reports.sales', 'reports.inventory'
+  ],
+  'Inventory Manager': [
+    'inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer',
+    'medicines.view', 'medicines.create', 'medicines.edit',
+    'reports.inventory'
   ],
   InventoryManager: [
-    'medicines:create', 'medicines:read', 'medicines:update',
-    'inventory:read', 'inventory:write', 'purchases:read', 'purchases:write', 'transfers:manage'
+    'inventory.view', 'inventory.create', 'inventory.adjust', 'inventory.transfer',
+    'medicines.view', 'medicines.create', 'medicines.edit',
+    'reports.inventory'
   ],
   Pharmacist: [
-    'medicines:read', 'inventory:read', 'inventory:write',
-    'sales:pos', 'sales:read', 'customers:read', 'customers:write'
+    'sales.view', 'sales.create', 'sales.edit',
+    'inventory.view',
+    'medicines.view', 'medicines.create', 'medicines.edit',
+    'reports.sales', 'reports.inventory'
   ],
   Cashier: [
-    'medicines:read', 'sales:pos', 'sales:read', 'customers:read'
+    'sales.view', 'sales.create',
+    'inventory.view',
+    'medicines.view'
+  ],
+  'Sales Staff': [
+    'sales.view', 'sales.create',
+    'inventory.view',
+    'medicines.view'
+  ],
+  SalesStaff: [
+    'sales.view', 'sales.create',
+    'inventory.view',
+    'medicines.view'
   ]
 };
 
@@ -58,6 +115,7 @@ export const login = async (req, res) => {
     // 1. Account Lockout Check
     if (user.isLocked()) {
       const waitMinutes = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
+      await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, 'locked', 'Account locked');
       return res.status(423).json({
         message: `Account is locked due to repeated failed logins. Please try again in ${waitMinutes} minutes.`
       });
@@ -96,6 +154,7 @@ export const login = async (req, res) => {
         }
         return res.status(423).json({ message: 'Too many failed login attempts. Account locked for 15 minutes.' });
       }
+      await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, 'failed', 'Invalid credentials');
       return res.status(401).json({ message: `Invalid credentials. ${5 - attempts} attempts remaining.` });
     }
 
@@ -122,6 +181,9 @@ export const login = async (req, res) => {
           email: user.email
         });
       }
+
+      // Record 2FA pending as login event
+      await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, '2fa_pending');
 
       const hashedCode = crypto.createHash('sha256').update(twoFactorCode).digest('hex');
       if (user.twoFactorCode !== hashedCode || user.twoFactorCodeExpire < Date.now()) {
@@ -150,6 +212,8 @@ export const login = async (req, res) => {
     } catch (e) {
       console.error('AuditLog error:', e.message);
     }
+
+    await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, 'success');
 
     res.status(200).json({
       status: 'success',
@@ -433,4 +497,19 @@ export const logout = (req, res) => {
   });
 
   res.status(200).json({ message: 'Logged out successfully' });
+};
+
+// Get Login History for a pharmacy's users
+export const getLoginHistory = async (req, res) => {
+  try {
+    const filter = { pharmacy: req.pharmacyId };
+    if (req.query.userId) filter.user = req.query.userId;
+    const logs = await LoginHistory.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(req.query.limit) || 100)
+      .populate('user', 'name email role');
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

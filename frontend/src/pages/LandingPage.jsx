@@ -53,21 +53,21 @@ const LandingPage = () => {
       <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 font-bold text-lg">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#0B5E8E] to-[#168A8A] flex items-center justify-center text-white shadow-lg shadow-[#0B5E8E]/30 font-bold text-lg">
               💊
             </div>
             <div>
-              <span className="text-lg font-bold text-white tracking-wide">Pharmacy ERP <span className="text-blue-400">SaaS</span></span>
+              <span className="text-lg font-bold text-white tracking-wide">Pharmacy ERP <span className="text-[#72D6C1]">SaaS</span></span>
               <p className="text-[10px] text-slate-400 font-medium">Enterprise Cloud Platform</p>
             </div>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-xs text-slate-300 font-medium">
-            <a href="#features" className="hover:text-blue-400 transition">Features</a>
-            <a href="#why-us" className="hover:text-blue-400 transition">Why Us</a>
-            <a href="#pricing" className="hover:text-blue-400 transition">Pricing</a>
-            <a href="#faq" className="hover:text-blue-400 transition">FAQ</a>
-            <Link to="/store" className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+            <a href="#features" className="hover:text-[#72D6C1] transition">Features</a>
+            <a href="#why-us" className="hover:text-[#72D6C1] transition">Why Us</a>
+            <a href="#pricing" className="hover:text-[#72D6C1] transition">Pricing</a>
+            <a href="#faq" className="hover:text-[#72D6C1] transition">FAQ</a>
+            <Link to="/store" className="text-[#249B72] hover:text-[#72D6C1] flex items-center gap-1 font-semibold">
               Storefront ↗
             </Link>
           </nav>
@@ -76,7 +76,7 @@ const LandingPage = () => {
             <Link to="/login" className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white transition">
               Sign In
             </Link>
-            <Link to="/register-tenant" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center gap-1.5">
+            <Link to="/register-tenant" className="px-5 py-2.5 bg-[#0B5E8E] hover:bg-[#08476B] text-white font-semibold text-xs rounded-xl shadow-lg shadow-[#0B5E8E]/30 transition flex items-center gap-1.5 cursor-pointer">
               Start Free Trial <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

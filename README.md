@@ -14,8 +14,14 @@ An enterprise-grade, multi-tenant **Pharmacy ERP & Inventory Management SaaS Sys
 - 💊 **FEFO Batch Inventory Control**: First-Expiry, First-Out batch tracking, supplier management, shelf/rack placement, automated reorder triggers, and barcode/QR generation.
 - ⚡ **High-Speed POS Checkout**: Point of Sale billing terminal supporting barcode scanning, instant calculations, cash/card/digital payments, and invoice generation.
 - 📑 **AI-Powered Prescription OCR**: Automatic extraction of medicine name, dosage, and frequency from prescription images with drug interaction safety warnings.
-- 👑 **SaaS SuperAdmin & Subscription Engine**: Multi-tier subscription management (Starter, Professional, Enterprise, Unlimited), automated trial management, company status lifecycle, and SaaS revenue analytics.
-- 🔐 **Granular Role-Based Access Control (RBAC)**: Complete security matrix enforcing permissions across 8 distinct user roles.
+- 💵 **Cash Register Drawer Sessions**: Shift open/close reconciliation with cash float tracking, actual drawer count comparisons, and automatic variance logging.
+- 🔄 **2-Step Manager-Approved Refund Pipeline**: Secure refund approval workflow preventing unauthorized cash returns.
+- 🌳 **Granular Role + Permission Tree (RBAC)**: Hierarchical access control matrix (`sales.*`, `inventory.*`, `medicines.*`, `staff.*`, `reports.*`) with dedicated specialized dashboards for:
+  - 👑 **Company Owner & Admin**: Executive KPIs, P&L, stock valuation, and multi-branch performance.
+  - 🏢 **Branch Manager**: Outlet sales, stock movements, staff rosters, and branch health.
+  - 💊 **Pharmacist Workstation**: Prescriptions queue, AI OCR review, and clinical interaction alerts.
+  - 📦 **Inventory Manager**: Warehouse stock, FEFO batch allocations, procurement POs, and transfers.
+  - 🛒 **Cashier & Sales Staff**: High-speed POS billing, patient search, shift register, and tender breakdown.
 - 📊 **Real-time Analytics & Financial Reporting**: Visual revenue graphs, sales distribution breakdown, stock movement logs, and audit trails.
 
 ---
@@ -24,161 +30,79 @@ An enterprise-grade, multi-tenant **Pharmacy ERP & Inventory Management SaaS Sys
 
 ### Backend
 - **Core**: Node.js, Express.js (REST API, ES Modules)
-- **Database**: MongoDB & Mongoose ODM / Prisma ORM
+- **Database**: MongoDB & Mongoose ODM
 - **Security**: JWT (JSON Web Tokens), bcryptjs, CORS, Helmet, Rate Limiter
-- **Utilities**: Nodemailer, PDFKit, ExcelJS
+- **Utilities**: Nodemailer, PDFKit, ExcelJS, Socket.IO
 
 ### Frontend
 - **Framework**: React 19, Vite
-- **Styling**: Vanilla Tailwind CSS (Dark Medical Theme)
+- **Styling**: Tailwind CSS (Custom Clinical Medical Palette)
 - **State & Router**: React Context API, React Router DOM
-- **HTTP & Charts**: Axios, Recharts, Lucide Icons
+- **HTTP & Icons**: Axios, Lucide Icons
 
 ---
 
-## 🔑 Default Credentials Directory
+## 🎨 Design System Palette
 
-Use these credentials to log in and test different access levels across the system:
-
-| Role | Email Address | Password | Access Level & Scope |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `superadmin@pharmacy.com` | `SuperAdminPass@2026!` | SaaS Platform Controller (All Companies & Subscriptions) |
-| **Company Owner** | `owner@pharmacy.com` | `OwnerPass@2026!` | Full Multi-Branch Enterprise Control & P&L Analytics |
-| **Branch Manager (HQ)** | `manager.hq@pharmacy.com` | `ManagerPass@2026!` | Headquarter Outlet Operations & Staff Management |
-| **Branch Manager (Branch)** | `manager.downtown@pharmacy.com` | `ManagerPass@2026!` | Downtown Branch Outlet Operations |
-| **Pharmacist** | `pharmacist@pharmacy.com` | `PharmPass@2026!` | Clinical Dispensing, Prescription OCR & Interactions |
-| **Cashier** | `cashier@pharmacy.com` | `CashierPass@2026!` | POS Terminal & Customer Billing |
-| **Inventory Staff** | `inventory@pharmacy.com` | `InventoryPass@2026!` | Stock Inwarding, FEFO Rack Placement & Transfers |
-| **Delivery Staff** | `delivery@pharmacy.com` | `DeliveryPass@2026!` | Order Dispatch, Delivery Status & COD Collection |
-| **Customer** | `customer@pharmacy.com` | `CustomerPass@2026!` | Patient Portal, Online Medicine Orders & Prescriptions |
+- **Primary**: `#0B5E8E` (Medical Navy)
+- **Primary Dark**: `#08476B`
+- **Secondary**: `#168A8A` (Teal)
+- **Accent**: `#72D6C1` (Mint Glow)
+- **Background**: `#F2F9FC`
+- **Surface**: `#FFFFFF`
+- **Border**: `#D9E8EF`
+- **Heading**: `#17324D`
+- **Body Text**: `#486273`
+- **Muted Text**: `#7C919D`
+- **Success**: `#249B72`
+- **Warning**: `#D99A2B`
+- **Error**: `#D95353`
+- **Info**: `#3B8FC4`
 
 ---
 
 ## ⚙️ Setup and Installation Guide
 
-### Prerequisites
-Make sure you have the following installed on your machine:
-- **Node.js** `>= v18.x` (or `v20+`)
-- **npm** `>= v9.x`
-- **MongoDB** (Local instance running at `mongodb://127.0.0.1:27017` or a MongoDB Atlas URI)
+### 1. Prerequisites
+- Node.js (v18 or higher)
+- MongoDB (Local instance or MongoDB Atlas cluster URI)
+- Git
 
----
-
-### Step 1: Clone the Repository
+### 2. Backend Setup
 ```bash
-git clone https://github.com/MHamdan07/pharmacy-erp.git
-cd pharmacy-erp
+cd backend
+npm install
+# Configure your .env file
+npm run dev
+```
+
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-### Step 2: Backend Configuration & Setup
+## 🚀 Running the Project (PowerShell)
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file in the `backend/` folder (you can copy `.env.example`):
-   ```env
-   PORT=5000
-   MONGO_URI=mongodb://127.0.0.1:27017/pharmacy_erp
-   NODE_ENV=development
-   CLIENT_URLS=http://localhost:5173,http://127.0.0.1:5173
-   JWT_ACCESS_SECRET=your_super_secret_jwt_access_key_2026
-   JWT_REFRESH_SECRET=your_super_secret_jwt_refresh_key_2026
-   ```
-
-4. Seed the Database (Creates initial tenants, branches, products, and default user accounts):
-   ```bash
-   npm run seed
-   ```
-
-5. Start the Backend Development Server:
-   ```bash
-   npm run dev
-   ```
-   *The backend server will run on `http://localhost:5000`.*
-
----
-
-### Step 3: Frontend Configuration & Setup
-
-1. Open a new terminal window, navigate to the `frontend` directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file in the `frontend/` folder (you can copy `.env.example`):
-   ```env
-   VITE_API_BASE_URL=http://localhost:5000/api/v1
-   VITE_APP_TITLE=Pharmacy ERP
-   ```
-
-4. Start the Frontend Development Server:
-   ```bash
-   npm run dev
-   ```
-   *The application will launch on `http://localhost:5173`.*
-
-> ⚠️ **Important Note on Running Scripts**:  
-> Always use `npm run dev` (NOT `npx run dev`) to start local development servers.
-
----
-
-## 📁 Repository Structure
-
-```
-pharmacy-erp/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # Database & third-party integrations
-│   │   ├── controllers/     # Business logic & request handlers
-│   │   ├── middlewares/     # Auth, RBAC, tenant & subscription gatekeepers
-│   │   ├── models/          # Mongoose database schemas
-│   │   ├── routes/          # RESTful API route definitions
-│   │   ├── services/        # Auxiliary services (PDF, Mail, AI)
-│   │   ├── seed.js          # Main database seeder script
-│   │   └── server.js        # Express app entry point
-│   ├── package.json
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   │   ├── api/             # Axios instance & interceptors
-│   │   ├── components/      # UI components & modals
-│   │   ├── context/         # Auth & Branch state management
-│   │   ├── pages/           # Dashboard & system pages
-│   │   └── main.jsx         # React DOM root entry
-│   ├── package.json
-│   └── .env.example
-└── README.md
+**Terminal 1 (Backend):**
+```powershell
+cd d:\projects\pharmacy-erp\backend
+npm run dev
 ```
 
----
+**Terminal 2 (Frontend):**
+```powershell
+cd d:\projects\pharmacy-erp\frontend
+npm run dev
+```
 
-## 📡 Core API Modules
-
-| Module Route | Description | Allowed Roles |
-| :--- | :--- | :--- |
-| `/api/v1/auth` | Authentication (Register, Login, Me, Logout) | Public / Authenticated |
-| `/api/v1/subscriptions/admin` | SaaS Analytics & Subscription Management | `SuperAdmin` |
-| `/api/v1/medicines` | Inventory Products & Batch Stocking | `Owner`, `Branch Manager`, `Pharmacist`, `Inventory Staff` |
-| `/api/v1/sales` | POS Transactions & Sales Invoices | `Owner`, `Branch Manager`, `Pharmacist`, `Cashier` |
-| `/api/v1/prescriptions` | AI Prescription OCR Verification | `Owner`, `Branch Manager`, `Pharmacist` |
-| `/api/v1/tenants` | Multi-Branch Outlet Management | `SuperAdmin`, `Owner` |
+- **Frontend Application**: [http://localhost:5173](http://localhost:5173)
+- **Backend API Server**: [http://localhost:5000](http://localhost:5000)
 
 ---
 
-## 🛡️ License & Support
-
-Developed for **Enterprise Pharmacy Operations**. Built with SOLID architectural standards and Clean Architecture principles.
+## 📄 License
+This project is licensed under the MIT License.

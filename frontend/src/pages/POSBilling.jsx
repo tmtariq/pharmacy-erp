@@ -154,6 +154,7 @@ const POSBilling = () => {
       setCompletedSale(res.data.sale);
       setCart([]);
       setDiscountAmount(0);
+      setPaymentMethod('cash');
       toast.success('Sale transaction completed successfully!');
       fetchMedicines(); // Refresh stock counts
     } catch (err) {
@@ -266,6 +267,7 @@ const POSBilling = () => {
                     className="text-red-400 hover:text-red-300 light:text-red-600 light:hover:text-red-700 text-xs py-1"
                     onClick={() => {
                       setCart([]);
+                      setPaymentMethod('cash');
                       toast.info('Cart cleared');
                     }}
                   >
@@ -358,104 +360,111 @@ const POSBilling = () => {
               </div>
             </div>
 
-            {/* Financial Summary & Payment Methods - ALWAYS PERMANENTLY PINNED AT BOTTOM */}
-            <div className="pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200 space-y-2 shrink-0 mt-auto">
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${subtotal.toFixed(2)}</span>
+            {/* Financial Summary & Payment Methods — shown once medicine is added */}
+            {cart.length > 0 && (
+              <div className="pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200 space-y-2 shrink-0 mt-auto">
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
+                    <span>Subtotal:</span>
+                    <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
+                    <span>Tax (GST/VAT):</span>
+                    <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600 items-center gap-2">
+                    <span>Discount ($):</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountAmount}
+                      onChange={(e) => setDiscountAmount(Math.max(0, Number(e.target.value)))}
+                      className="w-20 bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-700/80 dark:border-slate-700/80 light:border-slate-300 rounded-lg px-2 py-0.5 text-right text-white dark:text-white light:text-slate-900 font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
+                    />
+                  </div>
+                  <div className="flex justify-between font-extrabold text-sm sm:text-base text-white dark:text-white light:text-slate-900 pt-1.5 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
+                    <span>Grand Total:</span>
+                    <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-600">${grandTotal.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600">
-                  <span>Tax (GST/VAT):</span>
-                  <span className="font-mono text-white dark:text-white light:text-slate-900 font-semibold">${tax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-slate-400 dark:text-slate-400 light:text-slate-600 items-center gap-2">
-                  <span>Discount ($):</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discountAmount}
-                    onChange={(e) => setDiscountAmount(Math.max(0, Number(e.target.value)))}
-                    className="w-20 bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-700/80 dark:border-slate-700/80 light:border-slate-300 rounded-lg px-2 py-0.5 text-right text-white dark:text-white light:text-slate-900 font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
-                  />
-                </div>
-                <div className="flex justify-between font-extrabold text-sm sm:text-base text-white dark:text-white light:text-slate-900 pt-1.5 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
-                  <span>Grand Total:</span>
-                  <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-600">${grandTotal.toFixed(2)}</span>
-                </div>
-              </div>
 
-              {/* Payment Method Selector Grid */}
-              <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                {/* Payment Method Selector Grid */}
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-500 light:text-slate-500 uppercase tracking-wide mb-1.5">
+                    Payment Method
+                  </p>
+                  <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                    <Button
+                      variant={paymentMethod === 'cash' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={DollarSign}
+                      onClick={() => setPaymentMethod('cash')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      Cash
+                    </Button>
+                    <Button
+                      variant={paymentMethod === 'card' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={CreditCard}
+                      onClick={() => setPaymentMethod('card')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      Card
+                    </Button>
+                    <Button
+                      variant={paymentMethod === 'bank_transfer' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={Landmark}
+                      onClick={() => setPaymentMethod('bank_transfer')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      Bank
+                    </Button>
+                    <Button
+                      variant={paymentMethod === 'jazzcash' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={Smartphone}
+                      onClick={() => setPaymentMethod('jazzcash')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      JazzCash
+                    </Button>
+                    <Button
+                      variant={paymentMethod === 'easypaisa' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={Smartphone}
+                      onClick={() => setPaymentMethod('easypaisa')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      EasyPaisa
+                    </Button>
+                    <Button
+                      variant={paymentMethod === 'credit_account' ? 'primary' : 'outline'}
+                      size="sm"
+                      leftIcon={User}
+                      onClick={() => setPaymentMethod('credit_account')}
+                      className="py-1 px-1.5 text-[10px]"
+                    >
+                      Credit
+                    </Button>
+                  </div>
+                </div>
+
                 <Button
-                  variant={paymentMethod === 'cash' ? 'primary' : 'outline'}
-                  size="sm"
-                  leftIcon={DollarSign}
-                  onClick={() => setPaymentMethod('cash')}
-                  className="py-1 px-1.5 text-[10px]"
+                  variant="accent"
+                  size="md"
+                  fullWidth
+                  isLoading={loading}
+                  disabled={loading}
+                  onClick={handleCheckout}
+                  className="bg-orange-500 hover:bg-orange-400 dark:bg-orange-500 light:bg-orange-500 light:hover:bg-orange-600 text-white font-bold py-2 shadow-md shadow-orange-500/20 text-xs sm:text-sm cursor-pointer"
                 >
-                  Cash
-                </Button>
-                <Button
-                  variant={paymentMethod === 'card' ? 'primary' : 'outline'}
-                  size="sm"
-                  leftIcon={CreditCard}
-                  onClick={() => setPaymentMethod('card')}
-                  className="py-1 px-1.5 text-[10px]"
-                >
-                  Card
-                </Button>
-                <Button
-                  variant={paymentMethod === 'bank_transfer' ? 'primary' : 'outline'}
-                  size="sm"
-                  leftIcon={Landmark}
-                  onClick={() => setPaymentMethod('bank_transfer')}
-                  className="py-1 px-1.5 text-[10px]"
-                >
-                  Bank
-                </Button>
-                <Button
-                  variant={paymentMethod === 'jazzcash' ? 'danger' : 'outline'}
-                  size="sm"
-                  leftIcon={Smartphone}
-                  onClick={() => setPaymentMethod('jazzcash')}
-                  className="py-1 px-1.5 text-[10px]"
-                >
-                  JazzCash
-                </Button>
-                <Button
-                  variant={paymentMethod === 'easypaisa' ? 'accent' : 'outline'}
-                  size="sm"
-                  leftIcon={Smartphone}
-                  onClick={() => setPaymentMethod('easypaisa')}
-                  className="py-1 px-1.5 text-[10px]"
-                >
-                  EasyPaisa
-                </Button>
-                <Button
-                  variant={paymentMethod === 'credit_account' ? 'secondary' : 'outline'}
-                  size="sm"
-                  leftIcon={User}
-                  onClick={() => setPaymentMethod('credit_account')}
-                  className="py-1 px-1.5 text-[10px]"
-                >
-                  Credit
+                  Complete Sale (${grandTotal.toFixed(2)})
                 </Button>
               </div>
-
-              <Button
-                variant="accent"
-                size="md"
-                fullWidth
-                isLoading={loading}
-                disabled={cart.length === 0 || loading}
-                onClick={handleCheckout}
-                className="bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 light:bg-emerald-600 light:hover:bg-emerald-700 text-white font-bold py-2 shadow-md shadow-emerald-500/20 text-xs sm:text-sm cursor-pointer"
-              >
-                Complete Sale (${grandTotal.toFixed(2)})
-              </Button>
-            </div>
+            )}
           </Card>
         </div>
 

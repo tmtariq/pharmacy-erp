@@ -4,17 +4,17 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 const ACCENT_COLOR_MAP = {
-  teal: { name: 'Healthcare Teal', bg: 'bg-teal-600', text: 'text-teal-500', hex: '#0d9488' },
-  blue: { name: 'Ocean Blue', bg: 'bg-blue-600', text: 'text-blue-500', hex: '#2563eb' },
-  emerald: { name: 'Emerald Green', bg: 'bg-emerald-600', text: 'text-emerald-500', hex: '#059669' },
-  purple: { name: 'Royal Purple', bg: 'bg-purple-600', text: 'text-purple-500', hex: '#9333ea' },
-  rose: { name: 'Crimson Rose', bg: 'bg-rose-600', text: 'text-rose-500', hex: '#e11d48' },
-  amber: { name: 'Amber Gold', bg: 'bg-amber-600', text: 'text-amber-500', hex: '#d97706' },
+  brand: { name: 'Medical Navy (Primary)', bg: 'bg-[#0B5E8E]', text: 'text-[#0B5E8E]', hex: '#0B5E8E' },
+  secondary: { name: 'Teal (Secondary)', bg: 'bg-[#168A8A]', text: 'text-[#168A8A]', hex: '#168A8A' },
+  accent: { name: 'Mint Glow (Accent)', bg: 'bg-[#72D6C1]', text: 'text-[#72D6C1]', hex: '#72D6C1' },
+  emerald: { name: 'Clinical Success', bg: 'bg-[#249B72]', text: 'text-[#249B72]', hex: '#249B72' },
+  amber: { name: 'Warning Amber', bg: 'bg-[#D99A2B]', text: 'text-[#D99A2B]', hex: '#D99A2B' },
+  info: { name: 'Info Cyan', bg: 'bg-[#3B8FC4]', text: 'text-[#3B8FC4]', hex: '#3B8FC4' },
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'dark');
-  const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'teal');
+  const [themeMode, setThemeMode] = useState(localStorage.getItem('themeMode') || 'light');
+  const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'brand');
 
   useEffect(() => {
     localStorage.setItem('themeMode', themeMode);

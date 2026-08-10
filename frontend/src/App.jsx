@@ -7,7 +7,8 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import RegisterTenant from './pages/RegisterTenant';
-import Dashboard from './pages/Dashboard';
+import DashboardRouter from './pages/dashboards/DashboardRouter';
+import CompanySettings from './pages/settings/CompanySettings';
 import POSBilling from './pages/POSBilling';
 import Inventory from './pages/Inventory';
 import ExpiryManagement from './pages/ExpiryManagement';
@@ -48,7 +49,7 @@ function App() {
         {/* Protected Operations Layout Shell */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardRouter />} />
             <Route path="/superadmin" element={<SuperAdminDashboard />} />
             <Route path="/pos" element={<POSBilling />} />
             <Route path="/prescriptions" element={<PrescriptionManagement />} />
@@ -61,6 +62,7 @@ function App() {
             <Route path="/reports" element={<ReportsAnalytics />} />
             <Route path="/employees" element={<EmployeeManagement />} />
             <Route path="/system-settings" element={<SystemSettings />} />
+            <Route path="/settings/company" element={<CompanySettings />} />
             <Route path="/settings/subscription" element={<PharmacySubscription />} />
             <Route path="/settings/pharmacy" element={<PharmacySettings />} />
 

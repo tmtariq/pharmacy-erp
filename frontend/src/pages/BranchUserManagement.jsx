@@ -439,10 +439,32 @@ const BranchUserManagement = () => {
                     )}
                   </div>
                 </div>
-
                 <div className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 space-y-1 pt-2 border-t border-slate-800/80 dark:border-slate-800/80 light:border-slate-200">
-                  <div>Phone: {b.phone || 'N/A'}</div>
+                  <div className="flex justify-between items-center">
+                    <span>Phone: {b.phone || 'N/A'}</span>
+                    {!b.isHeadquarter && (
+                      <span className="flex items-center gap-1">
+                        <StatusDot variant={b.isActive !== false ? "success" : "danger"} size="sm" /> 
+                        {b.isActive !== false ? 'Active' : 'Disabled'}
+                      </span>
+                    )}
+                  </div>
                   <div className="truncate">Address: {b.address || 'N/A'}</div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-800/50">
+                    <div className="bg-slate-800/30 p-1.5 rounded">
+                      <div className="text-[10px] text-slate-500">Total Sales</div>
+                      <div className="font-semibold text-slate-200">{b.metrics?.salesCount || 0}</div>
+                    </div>
+                    <div className="bg-slate-800/30 p-1.5 rounded">
+                      <div className="text-[10px] text-slate-500">Revenue</div>
+                      <div className="font-semibold text-emerald-400">${b.metrics?.revenue || 0}</div>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Badge variant="neutral" size="sm"><UserCheck className="w-3 h-3 mr-1 inline" /> {b.metrics?.staffCount || 0} Staff Assigned</Badge>
+                  </div>
+
                   {b.isHeadquarter && (
                     <div className="text-amber-400 font-bold text-[10px] flex items-center gap-1 mt-1">
                       <StatusDot variant="warning" size="sm" /> Main Headquarter

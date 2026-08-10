@@ -2,7 +2,7 @@ import express from 'express';
 import {
   login,
   registerStaff, getUsers, updateStaffUser, getMe, refreshToken, logout,
-  forgotPassword, resetPassword, toggle2FA
+  forgotPassword, resetPassword, toggle2FA, getLoginHistory
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { attachTenant } from '../middlewares/tenantMiddleware.js';
@@ -27,5 +27,6 @@ router.post('/toggle-2fa', toggle2FA);
 router.get('/users', authorizeRoles('Owner', 'Admin', 'Branch Manager'), getUsers);
 router.put('/users/:id', authorizeRoles('Owner', 'Admin', 'Branch Manager'), updateStaffUser);
 router.post('/register-staff', authorizeRoles('Owner', 'Admin', 'Branch Manager'), registerStaff);
+router.get('/login-history', authorizeRoles('Owner', 'Admin'), getLoginHistory);
 
 export default router;

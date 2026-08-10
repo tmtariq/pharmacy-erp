@@ -15,18 +15,32 @@ export const authorizeRoles = (...allowedRoles) => {
 export const authorizePermissions = (...requiredPermissions) => {
   return (req, res, next) => {
     if (!req.userFull) {
-      return res.status(403).json({ message: 'Access forbidden' });
+      return res.status(403).json({ message: 'Access forbidden: No user context' });
     }
 
-    if (['SuperAdmin', 'Owner', 'Admin'].includes(req.userFull.role)) {
+    const role = req.userFull.role;
+    // SuperAdmin and Owner have global bypass
+    if (['SuperAdmin', 'Owner'].includes(role)) {
       return next();
     }
 
     const userPerms = req.userFull.permissions || [];
-    const hasPerm = requiredPermissions.every(perm => userPerms.includes(perm));
+    if (userPerms.includes('*')) {
+      return next();
+    }
 
-    if (!hasPerm) {
-      return res.status(403).json({ message: `Requires permissions: ${requiredPermissions.join(', ')}` });
+    // Check if user has all required permissions or wildcard namespace match
+    const hasAll = requiredPermissions.every((perm) => {
+      if (userPerms.includes(perm)) return true;
+      const namespace = perm.split('.')[0];
+      if (userPerms.includes(`${namespace}.*`)) return true;
+      return false;
+    });
+
+    if (!hasAll) {
+      return res.status(403).json({
+        message: `Permission denied. Required permission(s): ${requiredPermissions.join(', ')}`
+      });
     }
 
     next();

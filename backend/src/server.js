@@ -23,6 +23,7 @@ import prescriptionRoutes from './routes/prescriptionRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import financeRoutes from './routes/financeRoutes.js';
 
 dotenv.config();
 
@@ -82,6 +83,7 @@ apiRouter.use('/prescriptions', prescriptionRoutes);
 apiRouter.use('/ai', aiRoutes);
 apiRouter.use('/employees', employeeRoutes);
 apiRouter.use('/settings', settingsRoutes);
+apiRouter.use('/finance', financeRoutes);
 apiRouter.use('/reorder-duplicates', reorderDuplicateRoutes);
 
 app.use('/api/v1', apiRouter);

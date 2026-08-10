@@ -35,6 +35,7 @@ const Inventory = () => {
   const [editingBatchId, setEditingBatchId] = useState(null);
 
   const isOwnerOrAdmin = ['Owner', 'Admin', 'SuperAdmin'].includes(user?.role);
+  const canAddOrEditMedicine = ['Owner', 'Admin', 'SuperAdmin', 'Branch Manager', 'BranchManager', 'Pharmacist'].includes(user?.role);
 
   // Complete Medicine Form State (24 required fields!)
   const [medForm, setMedForm] = useState({
@@ -593,7 +594,7 @@ const Inventory = () => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {isOwnerOrAdmin && (
+          {canAddOrEditMedicine && (
             <Button
               variant="primary"
               size="md"

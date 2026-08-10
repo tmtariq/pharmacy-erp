@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import API from '../api/axios';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { canAccess } from '../constants/permissions';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -48,36 +49,84 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
     fetchFlags();
   }, [fetchFlags]);
 
-  const allNavItems = [
-    { label: t('dashboard', 'Dashboard'), path: '/dashboard', icon: LayoutDashboard },
-    { label: t('posBilling', 'POS Billing'), path: '/pos', icon: ShoppingCart, highlight: true, flag: 'pos' },
-    { label: t('prescriptions', 'Prescription & AI OCR'), path: '/prescriptions', icon: FileText, highlight: true },
-    { label: t('storefront', 'Customer E-Storefront'), path: '/store', icon: ShoppingBag },
-    { label: t('inventory', 'Inventory & Batches'), path: '/inventory', icon: Pill, flag: 'inventory' },
-    { label: t('expiryManagement', 'Expiry & FEFO Control'), path: '/expiry', icon: Clock, flag: 'expiry' },
-    { label: 'Barcode & Shelf Labels', path: '/barcode-labels', icon: Barcode, flag: 'barcode' },
-    { label: 'Risks & Safety Matrix', path: '/risk-matrix', icon: ShieldCheck, flag: 'riskMatrix' },
-    { label: t('stockTransfers', 'Stock Transfers'), path: '/transfers', icon: ArrowLeftRight, flag: 'transfers' },
-    { label: t('suppliers', 'Purchases & Suppliers'), path: '/purchases', icon: Truck, flag: 'purchases' },
-    { label: t('customers', 'Patients & Customers'), path: '/customers', icon: Users, flag: 'customers' },
-    { label: t('backupRestore', 'Backup & Restore'), path: '/backups', icon: Database, flag: 'backups' },
-    { label: t('branchManagement', 'Branch Management'), path: '/settings/branches', icon: Building2, ownerOnly: true, badge: 'Owner' },
-    { label: t('employees', 'Employee Staff Roster'), path: '/employees', icon: Users },
-    { label: t('settings', 'System Settings'), path: '/system-settings', icon: Settings },
-    { label: t('subscriptions', 'My Subscription'), path: '/settings/subscription', icon: CreditCard, highlight: true, ownerOnly: true },
-    { label: 'Pharmacy Settings', path: '/settings/pharmacy', icon: Settings, ownerOnly: true },
-    { label: t('reports', 'Reports & Audit'), path: '/reports', icon: FileBarChart, flag: 'reports' }
+  const navSections = [
+    {
+      label: 'Overview',
+      items: [
+        { label: t('dashboard', 'Dashboard'), path: '/dashboard', icon: LayoutDashboard },
+      ]
+    },
+    {
+      label: 'Operations',
+      items: [
+        { label: t('posBilling', 'POS Billing'), path: '/pos', icon: ShoppingCart, highlight: true, flag: 'pos' },
+        { label: t('prescriptions', 'Prescription & AI OCR'), path: '/prescriptions', icon: FileText, highlight: true },
+      ]
+    },
+    {
+      label: 'Inventory',
+      items: [
+        { label: t('inventory', 'Medicines & Batches'), path: '/inventory', icon: Pill, flag: 'inventory' },
+        { label: t('expiryManagement', 'Expiry & FEFO'), path: '/expiry', icon: Clock, flag: 'expiry' },
+        { label: 'Barcode & Labels', path: '/barcode-labels', icon: Barcode, flag: 'barcode' },
+        { label: t('stockTransfers', 'Stock Transfers'), path: '/transfers', icon: ArrowLeftRight, flag: 'transfers' },
+      ]
+    },
+    {
+      label: 'Procurement',
+      items: [
+        { label: t('suppliers', 'Purchases & Suppliers'), path: '/purchases', icon: Truck, flag: 'purchases' },
+      ]
+    },
+    {
+      label: 'Customers',
+      items: [
+        { label: t('customers', 'Patients & Customers'), path: '/customers', icon: Users, flag: 'customers' },
+        { label: t('storefront', 'E-Storefront'), path: '/store', icon: ShoppingBag },
+      ]
+    },
+    {
+      label: 'Analytics',
+      items: [
+        { label: t('reports', 'Reports & Analytics'), path: '/reports', icon: FileBarChart, flag: 'reports' },
+      ]
+    },
+    {
+      label: 'Staff & Team',
+      items: [
+        { label: t('employees', 'Staff Management'), path: '/employees', icon: Users },
+      ]
+    },
+    {
+      label: 'Management',
+      ownerOnly: true,
+      items: [
+        { label: t('branchManagement', 'Branches'), path: '/settings/branches', icon: Building2, badge: 'Pro' },
+        { label: 'Company Settings', path: '/settings/company', icon: Settings },
+        { label: 'Pharmacy Settings', path: '/settings/pharmacy', icon: Settings },
+        { label: t('backupRestore', 'Backup & Restore'), path: '/backups', icon: Database, flag: 'backups' },
+        { label: t('subscriptions', 'Subscription'), path: '/settings/subscription', icon: CreditCard, highlight: true },
+      ]
+    }
   ];
 
-  const visibleNavItems = allNavItems.filter((item) => {
-    if (item.superAdminOnly && user?.role !== 'SuperAdmin') return false;
-    if (item.ownerOnly) {
-      return user?.role === 'Owner';
-    }
-    if (!item.flag) return true;
-    if (!featureFlags) return true;
-    return featureFlags[item.flag] !== false;
-  });
+  const userRole = user?.role || 'Cashier';
+
+  const visibleSections = navSections
+    .map(section => {
+      // Filter items within each section
+      const filteredItems = section.items.filter(item => {
+        // Role + Granular Permission access check
+        if (!canAccess(user, item.path)) return false;
+        // Owner/Admin-only section check
+        if (section.ownerOnly && userRole !== 'Owner' && userRole !== 'Admin') return false;
+        // Feature flag check
+        if (item.flag && featureFlags && featureFlags[item.flag] === false) return false;
+        return true;
+      });
+      return { ...section, items: filteredItems };
+    })
+    .filter(section => section.items.length > 0);
 
   const handleNavClick = () => {
     if (onCloseMobileMenu) {
@@ -133,41 +182,45 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
                 </span>
               </div>
             )}
-            {!isCollapsed && (
-              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/70 font-mono-code transition-opacity">
-                Pharmacy Operations
-              </div>
-            )}
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={handleNavClick}
-                  title={isCollapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    `flex items-center ${isCollapsed ? 'justify-center px-0 py-2.5' : 'justify-between px-3.5 py-2.5'} rounded-xl text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-accent text-white shadow-lg shadow-accent/25 font-semibold tracking-tight'
-                        : item.highlight
-                        ? 'text-accent hover:bg-accent-soft'
-                        : 'text-white/90 hover:bg-slate-800/70 hover:text-white'
-                    }`
-                  }
-                >
-                  <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} truncate`}>
-                    <Icon className="w-5 h-5 shrink-0" />
-                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+            {visibleSections.map((section) => (
+              <div key={section.label} className="mb-4 last:mb-0">
+                {!isCollapsed && (
+                  <div className="px-3 py-1.5 mt-3 first:mt-0 text-[10px] font-bold uppercase tracking-widest text-white/40 font-mono">
+                    {section.label}
                   </div>
-                  {!isCollapsed && item.badge && (
-                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold font-mono-code px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
-                      {item.badge}
-                    </span>
-                  )}
-                </NavLink>
-              );
-            })}
+                )}
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={handleNavClick}
+                      title={isCollapsed ? item.label : undefined}
+                      className={({ isActive }) =>
+                        `flex items-center ${isCollapsed ? 'justify-center px-0 py-2.5' : 'justify-between px-3.5 py-2.5'} rounded-xl text-sm font-medium transition-all ${
+                          isActive
+                            ? 'bg-[#0B5E8E] text-white shadow-lg shadow-[#0B5E8E]/30 font-semibold tracking-tight'
+                            : item.highlight
+                            ? 'text-[#72D6C1] hover:bg-[#0B5E8E]/20'
+                            : 'text-white/90 hover:bg-slate-800/70 hover:text-white'
+                        }`
+                      }
+                    >
+                      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} truncate`}>
+                        <Icon className="w-5 h-5 shrink-0" />
+                        {!isCollapsed && <span className="truncate">{item.label}</span>}
+                      </div>
+                      {!isCollapsed && item.badge && (
+                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold font-mono-code px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ml-1">
+                          {item.badge}
+                        </span>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           {/* Desktop Sidebar Collapse Toggle + Subscription Card */}

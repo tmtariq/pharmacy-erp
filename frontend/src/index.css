@@ -7,141 +7,146 @@
 /* Enterprise Healthcare Product Design System (Inspired by Enhance Healthcare Product Design) */
 
 @theme {
-  --font-sans: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Fraunces', serif;
 
-  /* Primary Healthcare Teal/Cyan Medical Colors */
-  --color-teal-50: #f0fdfa;
-  --color-teal-100: #ccfbf1;
-  --color-teal-500: #14b8a6;
-  --color-teal-600: #0d9488;
-  --color-teal-700: #0f766e;
-
   /* Primary Brand Medical Colors */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
+  --color-primary: #0B5E8E;
+  --color-primary-dark: #08476B;
+  --color-secondary: #168A8A;
+  --color-accent: #72D6C1;
+
+  /* Background & Surface */
+  --color-bg-app: #F2F9FC;
+  --color-surface: #FFFFFF;
+  --color-border: #D9E8EF;
+
+  /* Typography */
+  --color-heading: #17324D;
+  --color-body: #486273;
+  --color-muted: #7C919D;
 
   /* Status Colors */
-  --color-success-500: #22c55e;
-  --color-success-600: #16a34a;
+  --color-success: #249B72;
+  --color-warning: #D99A2B;
+  --color-error: #D95353;
+  --color-info: #3B8FC4;
 
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
+  /* Legacy utility bindings */
+  --color-primary-50: #F2F9FC;
+  --color-primary-100: #E1F0F7;
+  --color-primary-500: #0B5E8E;
+  --color-primary-600: #08476B;
+  --color-primary-700: #063550;
 
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
+  --color-teal-500: #168A8A;
+  --color-teal-600: #127272;
 
-  /* Neutral Background Tokens */
-  --color-dark-bg: #0f172a;
-  --color-light-bg: #f8fafc;
-  --bg-app: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --border-app: #e2e8f0;
-  --border-subtle: #cbd5e1;
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --text-subtle: #64748b;
-  --accent-500: #14b8a6;
-  --accent-600: #0d9488;
-  --accent-700: #0f766e;
-  --accent-soft: rgba(20, 184, 166, 0.18);
-  --accent-border: rgba(20, 184, 166, 0.3);
-  --accent-ring: rgba(20, 184, 166, 0.4);
+  --color-success-500: #249B72;
+  --color-success-600: #1E8260;
+
+  --color-danger-500: #D95353;
+  --color-danger-600: #C24141;
+
+  --color-warning-500: #D99A2B;
+  --color-warning-600: #BA801E;
+
+  --bg-app: #F2F9FC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #EAF4F9;
+  --border-app: #D9E8EF;
+  --border-subtle: #C5DCE6;
+  --text-main: #17324D;
+  --text-muted: #486273;
+  --text-subtle: #7C919D;
+  --accent-500: #0B5E8E;
+  --accent-600: #08476B;
+  --accent-700: #063550;
+  --accent-soft: rgba(11, 94, 142, 0.12);
+  --accent-border: rgba(11, 94, 142, 0.28);
+  --accent-ring: rgba(114, 214, 193, 0.5);
 }
 
 /* Light / Dark Mode CSS Custom Properties System */
 :root {
-  color-scheme: dark;
-  --bg-app: #0a0f1e;
-  --bg-surface: #15202b;
-  --bg-surface-elevated: #1e293b;
-  --border-app: #334155;
-  --border-subtle: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
-  --bg-sidebar-navy: #0c1628;
+  color-scheme: light dark;
+  --bg-app: #081622;
+  --bg-surface: #0E2233;
+  --bg-surface-elevated: #152E44;
+  --border-app: #1D3F5C;
+  --border-subtle: #17344D;
+  --text-main: #F2F9FC;
+  --text-muted: #9EBDD0;
+  --text-subtle: #7C919D;
+  --bg-sidebar-navy: #081B2B;
 
-  /* Default Flagship Healthcare Teal Accent Palette */
-  --accent-500: #14b8a6;
-  --accent-600: #0d9488;
-  --accent-700: #0f766e;
-  --accent-soft: rgba(20, 184, 166, 0.18);
-  --accent-border: rgba(20, 184, 166, 0.3);
-  --accent-ring: rgba(20, 184, 166, 0.4);
+  /* Brand Primary & Teal Accent Palette */
+  --accent-500: #0B5E8E;
+  --accent-600: #08476B;
+  --accent-700: #063550;
+  --accent-soft: rgba(114, 214, 193, 0.18);
+  --accent-border: rgba(114, 214, 193, 0.35);
+  --accent-ring: rgba(114, 214, 193, 0.45);
 }
 
-:root[data-accent="teal"] {
-  --accent-500: #14b8a6;
-  --accent-600: #0d9488;
-  --accent-700: #0f766e;
-  --accent-soft: rgba(20, 184, 166, 0.18);
-  --accent-border: rgba(20, 184, 166, 0.3);
-  --accent-ring: rgba(20, 184, 166, 0.4);
+:root[data-accent="brand"], :root[data-accent="teal"] {
+  --accent-500: #0B5E8E;
+  --accent-600: #08476B;
+  --accent-700: #063550;
+  --accent-soft: rgba(11, 94, 142, 0.15);
+  --accent-border: rgba(11, 94, 142, 0.3);
+  --accent-ring: rgba(114, 214, 193, 0.5);
+}
+
+:root[data-accent="secondary"] {
+  --accent-500: #168A8A;
+  --accent-600: #127272;
+  --accent-700: #0D5454;
+  --accent-soft: rgba(22, 138, 138, 0.15);
+  --accent-border: rgba(22, 138, 138, 0.3);
+  --accent-ring: rgba(114, 214, 193, 0.5);
 }
 
 :root[data-accent="blue"] {
-  --accent-500: #3b82f6;
-  --accent-600: #2563eb;
-  --accent-700: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.15);
-  --accent-border: rgba(37, 99, 235, 0.3);
-  --accent-ring: rgba(37, 99, 235, 0.4);
+  --accent-500: #0B5E8E;
+  --accent-600: #08476B;
+  --accent-700: #063550;
+  --accent-soft: rgba(11, 94, 142, 0.15);
+  --accent-border: rgba(11, 94, 142, 0.3);
+  --accent-ring: rgba(59, 143, 196, 0.4);
 }
 
 :root[data-accent="emerald"] {
-  --accent-500: #10b981;
-  --accent-600: #059669;
-  --accent-700: #047857;
-  --accent-soft: rgba(16, 185, 129, 0.15);
-  --accent-border: rgba(16, 185, 129, 0.3);
-  --accent-ring: rgba(16, 185, 129, 0.4);
-}
-
-:root[data-accent="purple"] {
-  --accent-500: #a855f7;
-  --accent-600: #9333ea;
-  --accent-700: #7e22ce;
-  --accent-soft: rgba(147, 51, 234, 0.15);
-  --accent-border: rgba(147, 51, 234, 0.3);
-  --accent-ring: rgba(147, 51, 234, 0.4);
-}
-
-:root[data-accent="rose"] {
-  --accent-500: #f43f5e;
-  --accent-600: #e11d48;
-  --accent-700: #be123c;
-  --accent-soft: rgba(244, 63, 94, 0.15);
-  --accent-border: rgba(244, 63, 94, 0.3);
-  --accent-ring: rgba(244, 63, 94, 0.4);
+  --accent-500: #249B72;
+  --accent-600: #1E8260;
+  --accent-700: #166147;
+  --accent-soft: rgba(36, 155, 114, 0.15);
+  --accent-border: rgba(36, 155, 114, 0.3);
+  --accent-ring: rgba(36, 155, 114, 0.4);
 }
 
 :root[data-accent="amber"] {
-  --accent-500: #f59e0b;
-  --accent-600: #d97706;
-  --accent-700: #b45309;
-  --accent-soft: rgba(245, 158, 11, 0.15);
-  --accent-border: rgba(245, 158, 11, 0.3);
-  --accent-ring: rgba(245, 158, 11, 0.4);
+  --accent-500: #D99A2B;
+  --accent-600: #BA801E;
+  --accent-700: #936313;
+  --accent-soft: rgba(217, 154, 43, 0.15);
+  --accent-border: rgba(217, 154, 43, 0.3);
+  --accent-ring: rgba(217, 154, 43, 0.4);
 }
 
 html.light-mode, html.light {
   color-scheme: light;
-  --font-sans: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --bg-app: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f1f5f9;
-  --border-app: #e2e8f0;
-  --border-subtle: #cbd5e1;
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --text-subtle: #64748b;
+  --bg-app: #F2F9FC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #EAF4F9;
+  --border-app: #D9E8EF;
+  --border-subtle: #C5DCE6;
+  --text-main: #17324D;
+  --text-muted: #486273;
+  --text-subtle: #7C919D;
   --color-red-300: oklch(80.8% 0.114 19.571);
   --color-red-400: oklch(70.4% 0.191 22.216);
   --color-red-500: oklch(63.7% 0.237 25.331);
@@ -272,20 +277,20 @@ html.light-mode body {
 /* High Contrast Light Mode Readability Overrides */
 html.light-mode .text-white,
 html.light-mode .text-slate-100 {
-  color: #0f172a !important;
+  color: #17324D !important;
 }
 
 html.light-mode .text-slate-200,
 html.light-mode .text-slate-300 {
-  color: #1e293b !important;
+  color: #214363 !important;
 }
 
 html.light-mode .text-slate-400 {
-  color: #475569 !important;
+  color: #486273 !important;
 }
 
 html.light-mode .text-slate-500 {
-  color: #64748b !important;
+  color: #7C919D !important;
 }
 
 html.light-mode .bg-slate-950,
@@ -300,7 +305,7 @@ html.light-mode .bg-slate-800\/60,
 html.light-mode .bg-slate-800\/80,
 html.light-mode .bg-slate-800\/90,
 html.light-mode .bg-slate-800\/95 {
-  background-color: #fffdfc !important;
+  background-color: #FFFFFF !important;
 }
 
 html.light-mode .bg-slate-100,
@@ -310,7 +315,7 @@ html.light-mode .bg-slate-400,
 html.light-mode .bg-slate-500,
 html.light-mode .bg-slate-600,
 html.light-mode .bg-slate-700 {
-  background-color: #fafafa !important;
+  background-color: #F2F9FC !important;
 }
 
 html.light-mode .border-slate-800,
@@ -320,19 +325,19 @@ html.light-mode .border-slate-700,
 html.light-mode .border-slate-700\/80,
 html.light-mode .border-slate-700\/40,
 html.light-mode .border-slate-700\/50 {
-  border-color: #e2e8f0 !important;
+  border-color: #D9E8EF !important;
 }
 
 html.light-mode .divide-slate-800\/60 > * + * {
-  border-color: #e2e8f0 !important;
+  border-color: #D9E8EF !important;
 }
 
 html.light-mode .kpi-card,
 html.light-mode .glass-card,
 html.light-mode .glass-modal {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05) !important;
+  background-color: #FFFFFF !important;
+  border-color: #D9E8EF !important;
+  box-shadow: 0 4px 16px -2px rgba(11, 94, 142, 0.06) !important;
 }
 
 /* Typography & Display Helpers */
