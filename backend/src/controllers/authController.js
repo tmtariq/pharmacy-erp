@@ -158,13 +158,54 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: `Invalid credentials. ${5 - attempts} attempts remaining.` });
     }
 
-    // 3. Reset failed attempts on success atomically
+    // 3. User Status Check
+    if (user.isActive === false || user.status === 'inactive') {
+      await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, 'inactive', 'Account inactive');
+      return res.status(403).json({ message: 'Your account is currently inactive. Please contact your administrator.' });
+    }
+
+    if (user.status === 'suspended') {
+      await recordLogin(user._id, user.pharmacy?._id || user.pharmacy, normalizedEmail, req, 'suspended', 'Account suspended');
+      return res.status(403).json({ message: 'Your account has been suspended. Please contact your administrator.' });
+    }
+
+    // 4. Company Status & Subscription Check (for Non-SuperAdmin)
+    if (user.role !== 'SuperAdmin') {
+      const company = user.pharmacy;
+      if (!company) {
+        return res.status(403).json({ message: 'Your organization account is currently inactive.' });
+      }
+
+      const compStatus = (company.companyStatus || company.status || '').toLowerCase();
+      if (company.isActive === false || compStatus === 'inactive' || compStatus === 'rejected') {
+        return res.status(403).json({ message: 'Your organization account is currently inactive.' });
+      }
+
+      if (compStatus === 'suspended') {
+        return res.status(403).json({ message: 'Your organization account is currently suspended.' });
+      }
+
+      if (compStatus === 'pending' || (company.subscriptionStatus || '').toLowerCase() === 'pending') {
+        return res.status(403).json({ message: 'Your organization account is awaiting activation.' });
+      }
+
+      if ((company.subscriptionStatus || '').toLowerCase() === 'expired') {
+        return res.status(403).json({ message: "Your organization's subscription has expired." });
+      }
+
+      const subStatus = (company.subscriptionStatus || '').toLowerCase();
+      if (subStatus === 'suspended' || subStatus === 'canceled' || subStatus === 'cancelled') {
+        return res.status(403).json({ message: 'Your organization account is currently suspended.' });
+      }
+    }
+
+    // 5. Reset failed attempts on success atomically
     await User.updateOne(
       { _id: user._id },
-      { $set: { failedLoginAttempts: 0, lockUntil: null } }
+      { $set: { failedLoginAttempts: 0, lockUntil: null, lastLoginAt: new Date() } }
     );
 
-    // 4. Two-Factor Authentication Check
+    // 6. Two-Factor Authentication Check
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
         // Generate and send 2FA code
@@ -455,7 +496,10 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ message: 'Refresh token not found' });
     }
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || 'super_secret_pharmacy_erp_refresh_key_2026';
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    if (!refreshSecret) {
+      return res.status(500).json({ message: 'Server Security Configuration Error: JWT Refresh Secret is missing.' });
+    }
     const decoded = jwt.verify(refreshToken, refreshSecret);
     const user = await User.findById(decoded.id)
       .select('-password')

@@ -55,6 +55,25 @@ export const attachTenant = async (req, res, next) => {
       branchId: activeBranchId
     };
 
+    // Strict Tenant Isolation Boundary Check
+    const requestedPharmacyId = String(req.params?.pharmacyId || req.body?.pharmacyId || req.query?.pharmacyId || '');
+    if (requestedPharmacyId && String(pharmacy._id) !== requestedPharmacyId) {
+      return res.status(403).json({
+        message: 'FORBIDDEN: Tenant Isolation boundary violation. Attempt to access unauthorized pharmacy company data is blocked.'
+      });
+    }
+
+    // Strict Branch Isolation Boundary Check
+    const requestedBranchId = String(req.params?.branchId || req.body?.branchId || req.query?.branchId || '');
+    if (requestedBranchId && activeBranchId && String(activeBranchId) !== requestedBranchId) {
+      const isOwnerOrAdmin = ['Owner', 'Admin'].includes(user.role);
+      if (!isOwnerOrAdmin) {
+        return res.status(403).json({
+          message: 'FORBIDDEN: Branch Isolation boundary violation. Your account is restricted to your assigned branch outlet.'
+        });
+      }
+    }
+
     return next();
   } catch (error) {
     return next(error);

@@ -19,10 +19,13 @@ const connectDB = async () => {
 
   if (!cachedPromise) {
     const primaryUri = process.env.MONGO_URI;
-    const defaultAtlasUri = 'mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0';
     const fallbackUri = 'mongodb://127.0.0.1:27017/pharmacy_erp';
 
-    const uriToUse = primaryUri || defaultAtlasUri || fallbackUri;
+    const uriToUse = primaryUri || fallbackUri;
+
+    if (!primaryUri) {
+      console.warn('⚠️ Warning: MONGO_URI environment variable is missing. Falling back to local MongoDB.');
+    }
 
     cachedPromise = mongoose.connect(uriToUse, {
       serverSelectionTimeoutMS: 15000

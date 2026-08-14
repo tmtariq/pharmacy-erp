@@ -2,12 +2,12 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 const variantClasses = {
-  primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 active:scale-[0.98]',
-  secondary: 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 dark:bg-slate-800 dark:text-slate-100 light:bg-slate-100 light:text-slate-800 light:border-slate-300 light:hover:bg-slate-200',
-  accent: 'bg-accent bg-accent-hover text-white shadow-sm shadow-accent/20 active:scale-[0.98]',
-  danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-500/20 active:scale-[0.98]',
-  outline: 'border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white dark:border-slate-700 dark:text-slate-300 light:border-slate-300 light:text-slate-700 light:hover:bg-slate-100',
-  ghost: 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 dark:text-slate-400 light:text-slate-600 light:hover:bg-slate-100',
+  primary: 'bg-[#235347] hover:bg-[#163832] text-[#DAF1DE] shadow-sm active:scale-[0.98]',
+  secondary: 'bg-[#8EB69B] hover:bg-[#235347] text-[#051F20] hover:text-[#DAF1DE] border border-transparent active:scale-[0.98]',
+  accent: 'bg-[#235347] hover:bg-[#163832] text-[#DAF1DE] shadow-sm active:scale-[0.98]',
+  danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm active:scale-[0.98]',
+  outline: 'border border-[#235347] text-[#235347] hover:bg-[#163832] hover:text-[#DAF1DE] transition-colors',
+  ghost: 'text-[#235347] hover:bg-[#163832]/20 hover:text-[#051F20] transition-colors',
 };
 
 const sizeClasses = {

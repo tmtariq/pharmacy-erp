@@ -9,6 +9,7 @@ import {
   renewSubscription,
   getAllTenantSubscriptions,
   getSuperAdminFullAnalytics,
+  createTenantCompanyBySuperAdmin,
   updateTenantCompany,
   deleteTenantCompany
 } from '../controllers/subscriptionController.js';
@@ -24,6 +25,7 @@ router.get('/my-subscription', getMySubscription);
 router.get('/plans', getSubscriptionPlans);
 router.get('/admin/all-subscriptions', authorizeRoles('SuperAdmin'), getAllTenantSubscriptions);
 router.get('/admin/full-analytics', authorizeRoles('SuperAdmin'), getSuperAdminFullAnalytics);
+router.post('/admin/create-company', authorizeRoles('SuperAdmin'), createTenantCompanyBySuperAdmin);
 router.put('/admin/company/:pharmacyId', authorizeRoles('SuperAdmin'), updateTenantCompany);
 router.delete('/admin/company/:pharmacyId', authorizeRoles('SuperAdmin'), deleteTenantCompany);
 router.post('/change-plan', authorizeRoles('Owner', 'SuperAdmin', 'Admin'), changeSubscriptionPlan);

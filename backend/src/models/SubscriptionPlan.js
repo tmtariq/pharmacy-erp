@@ -2,19 +2,22 @@ import mongoose from 'mongoose';
 
 const subscriptionPlanSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true }, // Starter, Professional, Enterprise, Custom
-    price: { type: Number, required: true, default: 99 },
-    yearlyPrice: { type: Number, default: 990 }, // Discounted yearly
-    billingCycle: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' },
+    name: { type: String, required: true, unique: true, trim: true }, // Basic, Professional, Enterprise, Custom, Starter
+    planType: { type: String, enum: ['Basic', 'Professional', 'Enterprise', 'Custom'], default: 'Professional' },
     description: { type: String, default: '' },
+    monthlyPrice: { type: Number, required: true, default: 99 },
+    yearlyPrice: { type: Number, default: 990 },
+    trialDurationDays: { type: Number, default: 14 },
+    supportLevel: { type: String, enum: ['Community', 'Standard (Email)', 'Priority (24/7 Phone & Email)', 'Dedicated Account Manager'], default: 'Standard (Email)' },
 
     // Plan Limits
     limits: {
-      maxBranches: { type: Number, default: 1 },
-      maxUsers: { type: Number, default: 3 },
-      maxMedicines: { type: Number, default: 500 },
-      maxStorageGB: { type: Number, default: 2 },
-      maxApiRequests: { type: Number, default: 5000 }
+      maxUsers: { type: Number, default: 5 }, // -1 for unlimited
+      maxBranches: { type: Number, default: 1 }, // -1 for unlimited
+      maxMedicines: { type: Number, default: 1000 }, // -1 for unlimited
+      maxStorageGB: { type: Number, default: 5 },
+      maxMonthlyTransactions: { type: Number, default: 10000 },
+      maxApiRequests: { type: Number, default: 10000 }
     },
 
     // Feature Flags Matrix
@@ -25,26 +28,19 @@ const subscriptionPlanSchema = new mongoose.Schema(
       expiry: { type: Boolean, default: true },
       barcode: { type: Boolean, default: true },
       qrScanner: { type: Boolean, default: true },
-      reports: { type: Boolean, default: true },
-      multiBranch: { type: Boolean, default: false },
-      accounting: { type: Boolean, default: false },
-      purchaseApproval: { type: Boolean, default: false },
-      sms: { type: Boolean, default: false },
-      email: { type: Boolean, default: false },
-      clinicalWarnings: { type: Boolean, default: false },
-      auditLogs: { type: Boolean, default: false },
-      riskMatrix: { type: Boolean, default: false },
-      transfers: { type: Boolean, default: false },
-      purchases: { type: Boolean, default: false },
-      customers: { type: Boolean, default: true },
-      backups: { type: Boolean, default: false },
+      apiAccess: { type: Boolean, default: false },
+      advancedReporting: { type: Boolean, default: false },
+      accountingAccess: { type: Boolean, default: false },
+      multiBranchSupport: { type: Boolean, default: false },
+      analytics: { type: Boolean, default: false },
       aiForecast: { type: Boolean, default: false },
-      voiceSearch: { type: Boolean, default: false },
-      webhooks: { type: Boolean, default: false },
-      apiAccess: { type: Boolean, default: false }
+      smsNotifications: { type: Boolean, default: false },
+      emailNotifications: { type: Boolean, default: true },
+      auditLogs: { type: Boolean, default: false },
+      automatedBackups: { type: Boolean, default: false }
     },
 
-    status: { type: String, enum: ['active', 'archived'], default: 'active' }
+    status: { type: String, enum: ['active', 'inactive', 'archived'], default: 'active' }
   },
   { timestamps: true }
 );

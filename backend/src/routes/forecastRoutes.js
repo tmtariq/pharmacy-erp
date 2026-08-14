@@ -13,10 +13,11 @@ import {
 import { protect } from '../middlewares/authMiddleware.js';
 import { attachTenant } from '../middlewares/tenantMiddleware.js';
 import { authorizeRoles } from '../middlewares/rbacMiddleware.js';
+import { requireFeature } from '../middlewares/featureEntitlementMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect, attachTenant);
+router.use(protect, attachTenant, requireFeature('aiForecast'));
 
 // Forecast Dashboard & Metrics
 router.get('/', getForecastDashboard);

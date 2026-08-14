@@ -33,7 +33,7 @@ const MainLayout = () => {
         <Sidebar isMobileOpen={isMobileOpen} onCloseMobileMenu={closeMobileMenu} />
 
         {/* Main Operational Workspace Area */}
-        <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 sm:p-4 lg:p-5 bg-slate-950 dark:bg-slate-950 light:bg-slate-50 min-w-0 flex flex-col">
+        <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-5 bg-slate-950 dark:bg-slate-950 light:bg-slate-50 min-w-0 flex flex-col">
           <SubscriptionGatekeeper />
         </main>
       </div>

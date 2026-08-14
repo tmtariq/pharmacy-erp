@@ -134,6 +134,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendPasswordReset = async (emailToReset) => {
+    return await API.post('/auth/forgot-password', { email: emailToReset });
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -143,6 +147,7 @@ export const AuthProvider = ({ children }) => {
       login,
       registerTenant,
       logout,
+      sendPasswordReset,
       loading
     }}>
       {children}

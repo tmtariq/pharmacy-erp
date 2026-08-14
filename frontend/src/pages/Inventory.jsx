@@ -464,31 +464,33 @@ const Inventory = () => {
         </div>
 
         {med.batches && med.batches.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {med.batches.map((b) => (
-              <div key={b._id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-2">
-                <div className="flex justify-between font-mono font-bold text-amber-400">
-                  <span>Batch: {b.batchNumber}</span>
-                  <span className="text-white">{b.quantity} {med.unit}s</span>
+          <div className="max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {med.batches.map((b) => (
+                <div key={b._id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-2">
+                  <div className="flex justify-between font-mono font-bold text-amber-400">
+                    <span>Batch: {b.batchNumber}</span>
+                    <span className="text-white">{b.quantity} {med.unit}s</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Exp: {new Date(b.expiryDate).toLocaleDateString()}</span>
+                    <span>Rack: {b.rackNumber || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-400 font-semibold pt-1 border-t border-slate-800">
+                    <span>Selling: ${b.sellingPrice?.toFixed(2)}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-1 text-blue-400"
+                      onClick={() => handleEditBatchClick(b)}
+                      title="Edit Batch"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Exp: {new Date(b.expiryDate).toLocaleDateString()}</span>
-                  <span>Rack: {b.rackNumber || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center text-emerald-400 font-semibold pt-1 border-t border-slate-800">
-                  <span>Selling: ${b.sellingPrice?.toFixed(2)}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 text-blue-400"
-                    onClick={() => handleEditBatchClick(b)}
-                    title="Edit Batch"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : (
           <div className="text-xs text-slate-500 italic py-2">

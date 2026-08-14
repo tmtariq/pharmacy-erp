@@ -54,9 +54,9 @@ export const Card = ({
     glass: 'glass-card',
     kpi: 'kpi-card',
     solid:
-      'bg-slate-900 border border-slate-800 dark:bg-slate-900 dark:border-slate-800 light:bg-white light:border-slate-200 shadow-lg rounded-2xl',
+      'bg-[#163832] border border-transparent shadow-lg rounded-2xl text-[#DAF1DE]',
     outline:
-      'bg-transparent border border-slate-800 dark:border-slate-800 light:border-slate-300 rounded-2xl',
+      'bg-transparent border border-[#235347] rounded-2xl',
   };
 
   const glowStyle = hoverGlow

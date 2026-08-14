@@ -1,39 +1,61 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../api/axios';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import { useLanguage } from '../context/LanguageContext';
 import {
-  ShieldCheck, Building2, CreditCard, DollarSign, Users, Layers, Pill,
-  Package, ShoppingCart, Bot, Bell, LifeBuoy, Shield, Server, TrendingUp,
-  Zap, Clock, Search, Moon, Sun, LogOut, CheckCircle2, AlertTriangle,
-  Plus, FileText, Database, Tag, BarChart3, PieChart,
-  RefreshCw, Activity, X, Check, Lock, ShieldAlert,
-  FileSpreadsheet, Download, Sliders, ChevronRight, Edit3, Trash2, Eye,
-  Filter, Mail, Globe, Receipt, HelpCircle, UserCheck, Percent
+  Building2, CreditCard, Users, Plus, RefreshCw,
+  Lock, Unlock, Trash2, CheckCircle2, AlertTriangle,
+  Search, LogOut, TrendingUp, DollarSign, Activity,
+  Clock, ShieldAlert, ArrowUpRight, BarChart3,
+  PieChart, AlertCircle, ChevronRight, X, UserCheck,
+  ShieldCheck, ArrowDownRight, Layers, FileText, RotateCcw, MapPin, MessageSquare, Bell
 } from 'lucide-react';
-import { Card, Button, Modal, Badge, Skeleton, useToast } from '../components/ui';
+import { useToast } from '../components/ui';
+import SuperAdminCompanyTable from '../components/superadmin/SuperAdminCompanyTable';
+import PendingApprovals from '../components/superadmin/PendingApprovals';
+import SubscriptionPlanManager from '../components/superadmin/SubscriptionPlanManager';
+import PaymentManager from '../components/superadmin/PaymentManager';
+import RefundManager from '../components/superadmin/RefundManager';
+import InvoiceManager from '../components/superadmin/InvoiceManager';
+import CompanyUsersManager from '../components/superadmin/CompanyUsersManager';
+import BranchManager from '../components/superadmin/BranchManager';
+import PlatformAuditManager from '../components/superadmin/PlatformAuditManager';
+import PlatformNotificationSettings from '../components/superadmin/PlatformNotificationSettings';
+import PlatformSupportTickets from '../components/superadmin/PlatformSupportTickets';
+import PlatformReportsManager from '../components/superadmin/PlatformReportsManager';
+import PlatformSettingsPanel from '../components/superadmin/PlatformSettingsPanel';
+import PlatformConfirmationModal from '../components/superadmin/PlatformConfirmationModal';
 
-const SuperAdminDashboard = () => {
-  const { logout } = useAuth();
-  const { t } = useLanguage();
+export default function SuperAdminDashboard() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [data, setData] = useState(null);
-  const [fullAnalytics, setFullAnalytics] = useState(null);
+
+  const [adminUser, setAdminUser] = useState(null);
+  const [tenants, setTenants] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Active Tab & Filters
+  const activeTab = searchParams.get('tab') || 'overview'; // 'overview' | 'companies' | 'subscriptions' | 'revenue' | 'analytics'
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [themeMode, setThemeMode] = useState('dark');
-  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
 
-  // Quick Action & CRUD Modals
-  const [modalType, setModalType] = useState(null); // 'add_company' | 'edit_company' | 'company_detail' | 'edit_plan' | 'add_coupon' | 'ticket_detail' | 'assign_role' | 'add_category' | 'add_branch'
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [companyFormData, setCompanyFormData] = useState({ name: '', code: '', email: '', plan: 'Enterprise' });
-  const [editingCompanyItem, setEditingCompanyItem] = useState(null);
-  const [editCompanyForm, setEditCompanyForm] = useState({
-    pharmacyName: '',
-    pharmacyCode: '',
+  // Create Company Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Confirmation Modal Dialog States
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmButtonText: '',
+    onConfirm: () => {}
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [companyForm, setCompanyForm] = useState({
+    companyName: '',
+    companyCode: '',
     phone: '',
     address: '',
     ownerName: '',
@@ -41,1222 +63,722 @@ const SuperAdminDashboard = () => {
     ownerPassword: '',
     plan: 'Professional',
     subscriptionStatus: 'active',
-    extendDays: 0
-  });
-  const [couponFormData, setCouponFormData] = useState({ code: '', discountPercent: 15, maxUses: 100, expiryDays: 30 });
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', description: '' });
-  const [actionLoading, setActionLoading] = useState(false);
-
-  // Mock State Lists for Super Admin Modules
-  const [coupons, setCoupons] = useState([
-    { id: '1', code: 'PROMO2026', discountPercent: 20, expiryDate: '2026-12-31', maxUses: 500, usedCount: 42, status: 'active' },
-    { id: '2', code: 'LAUNCH50', discountPercent: 50, expiryDate: '2026-09-30', maxUses: 100, usedCount: 88, status: 'active' },
-    { id: '3', code: 'WELCOME10', discountPercent: 10, expiryDate: '2026-06-30', maxUses: 1000, usedCount: 1000, status: 'expired' }
-  ]);
-
-  const [categories, setCategories] = useState([
-    { id: '1', name: 'Tablets & Capsules', description: 'Oral solid dosage medications', count: 240 },
-    { id: '2', name: 'Syrups & Suspensions', description: 'Liquid pediatric and adult formulations', count: 110 },
-    { id: '3', name: 'Injections & Vaccines', description: 'Sterile injectable pharmaceuticals', count: 85 },
-    { id: '4', name: 'Eye & Ear Drops', description: 'Ophthalmic and otic drops', count: 45 },
-    { id: '5', name: 'Surgical & Bandages', description: 'Dressings, gloves, and surgical tools', count: 160 }
-  ]);
-
-  const [invoices, setInvoices] = useState([
-    { id: 'INV-2026-001', company: 'HealthCare Plus Pharmacy', plan: 'Enterprise', amount: 799, status: 'paid', date: '2026-08-01', method: 'Credit Card' },
-    { id: 'INV-2026-002', company: 'MedixCare Store', plan: 'Professional', amount: 299, status: 'paid', date: '2026-07-28', method: 'Bank Transfer' },
-    { id: 'INV-2026-003', company: 'Apex Pharma Outlet', plan: 'Starter', amount: 99, status: 'pending', date: '2026-08-03', method: 'Offline Request' },
-    { id: 'INV-2026-004', company: 'CareMed Hospital Chain', plan: 'Unlimited', amount: 1499, status: 'overdue', date: '2026-07-15', method: 'Credit Card' }
-  ]);
-
-  const [supportTickets, setSupportTickets] = useState([
-    { id: 'TKT-801', company: 'HealthCare Plus', subject: 'Custom Invoice Template Query', priority: 'High', status: 'Open', createdAt: '2026-08-03 10:30' },
-    { id: 'TKT-802', company: 'MedixCare Store', subject: 'Barcode Printer Driver Setup', priority: 'Medium', status: 'In Progress', createdAt: '2026-08-02 14:15' },
-    { id: 'TKT-803', company: 'Apex Pharma', subject: 'AI Prescription OCR Calibration', priority: 'Low', status: 'Resolved', createdAt: '2026-08-01 09:00' }
-  ]);
-
-  const [auditLogs] = useState([
-    { id: 'LOG-901', action: 'Company Onboarded', details: 'Registered Apex Health Pharmacy (Enterprise Plan)', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-03 18:20' },
-    { id: 'LOG-902', action: 'Subscription Renewed', details: 'Extended MedixCare Store (+30 Days)', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-03 16:45' },
-    { id: 'LOG-903', action: 'Plan Modified', details: 'Updated Professional Plan price to $299/mo', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-02 11:10' },
-    { id: 'LOG-904', action: 'Coupon Created', details: 'Created promo code PROMO2026 (20% Off)', user: 'SuperAdmin', ip: '192.168.1.1', timestamp: '2026-08-01 15:30' }
-  ]);
-
-  const [platformSettings, setPlatformSettings] = useState({
-    appName: 'Pharmacy ERP SaaS',
-    supportEmail: 'support@pharmacyerp.com',
-    contactPhone: '+1 800 555 0199',
-    currency: 'USD ($)',
-    pkExchangeRate: '278.50',
-    eurExchangeRate: '0.92',
-    defaultLanguage: 'English (US)',
-    timezone: 'UTC+05:00 (Asia/Karachi)',
-    taxRate: 5,
-    smtpHost: 'smtp.sendgrid.net',
-    smtpPort: 587
+    subscriptionDurationDays: 30
   });
 
-  const fetchSuperAdminData = useCallback(async () => {
-    try {
-      const [subRes, analyticsRes] = await Promise.all([
-        API.get('/subscriptions/admin/all-subscriptions'),
-        API.get('/subscriptions/admin/full-analytics')
-      ]);
-      setData(subRes.data);
-      setFullAnalytics(analyticsRes.data);
-    } catch (err) {
-      console.error('Failed to load SuperAdmin dashboard:', err);
-    }
+  const getAdminHeaders = useCallback(() => {
+    const token = localStorage.getItem('saasAdminToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
+  const handleAdminLogout = async () => {
+    try {
+      await API.post('/saas-admin/logout', {}, { headers: getAdminHeaders() });
+    } catch {
+      // ignore
+    } finally {
+      localStorage.removeItem('saasAdminToken');
+      localStorage.removeItem('saasAdminUser');
+      navigate('/saas-admin/login');
+    }
+  };
+
+  const fetchPlatformData = useCallback(async () => {
+    const token = localStorage.getItem('saasAdminToken');
+    if (!token) {
+      navigate('/saas-admin/login');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const [meRes, tenantsRes, analyticsRes] = await Promise.all([
+        API.get('/saas-admin/me', { headers }),
+        API.get('/saas-admin/companies', { headers }),
+        API.get('/saas-admin/analytics', { headers })
+      ]);
+      setAdminUser(meRes.data?.admin || null);
+      setTenants(tenantsRes.data || []);
+      setAnalytics(analyticsRes.data || null);
+    } catch (err) {
+      console.error('SuperAdmin load error:', err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error('Session expired or unauthorized. Please authenticate.');
+        navigate('/saas-admin/login');
+      } else {
+        toast.error('Failed to load SaaS tenant platform data.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate, toast]);
+
   useEffect(() => {
-    fetchSuperAdminData();
-  }, [fetchSuperAdminData]);
+    fetchPlatformData();
+  }, [fetchPlatformData]);
 
   const handleCreateCompany = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
-      setActionLoading(true);
-      await API.post('/tenants/register', {
-        name: companyFormData.name,
-        code: companyFormData.code || companyFormData.name.slice(0, 5).toUpperCase(),
-        email: companyFormData.email,
-        plan: companyFormData.plan,
-        phone: '+1 800 555 0999',
-        address: 'Enterprise HQ'
+      await API.post('/saas-admin/companies/create', companyForm, { headers: getAdminHeaders() });
+      toast.success(`Pharmacy "${companyForm.companyName}" provisioned successfully!`);
+      setShowCreateModal(false);
+      setCompanyForm({
+        companyName: '',
+        companyCode: '',
+        phone: '',
+        address: '',
+        ownerName: '',
+        ownerEmail: '',
+        ownerPassword: '',
+        plan: 'Professional',
+        subscriptionStatus: 'active',
+        subscriptionDurationDays: 30
       });
-      toast.success(`Company "${companyFormData.name}" onboarded successfully!`);
-      setModalType(null);
-      setCompanyFormData({ name: '', code: '', email: '', plan: 'Enterprise' });
-      fetchSuperAdminData();
+      fetchPlatformData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create company');
     } finally {
-      setActionLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleOpenEditCompany = (item) => {
-    setEditingCompanyItem(item);
-    setEditCompanyForm({
-      pharmacyName: item.pharmacy?.name || '',
-      pharmacyCode: item.pharmacy?.code || '',
-      phone: item.pharmacy?.phone || '',
-      address: item.pharmacy?.address || '',
-      ownerName: item.owner?.name || '',
-      ownerEmail: item.owner?.email || '',
-      ownerPassword: '',
-      plan: item.pharmacy?.plan || 'Professional',
-      subscriptionStatus: item.pharmacy?.subscriptionStatus || 'active',
-      extendDays: 0
+  const handleToggleSuspend = (pharmacyId) => {
+    const company = tenants.find(t => t._id === pharmacyId);
+    const isSuspended = company?.companyStatus === 'suspended' || company?.subscriptionStatus === 'suspended';
+    
+    setConfirmModal({
+      isOpen: true,
+      title: isSuspended ? 'Reactivate Pharmacy Company' : 'Suspend Pharmacy Company',
+      description: `You are about to modify access for "${company?.companyName || 'this company'}". Standard employees will be blocked or restored based on status toggles.`,
+      confirmButtonText: isSuspended ? 'Reactivate Tenant' : 'Suspend Tenant',
+      onConfirm: async (reason) => {
+        try {
+          await API.post(`/saas-admin/subscriptions/suspend/${pharmacyId}`, { reason }, { headers: getAdminHeaders() });
+          toast.success('Subscription status updated successfully.');
+          fetchPlatformData();
+        } catch {
+          toast.error('Failed to update subscription status.');
+        }
+      }
     });
-    setModalType('edit_company');
   };
 
-  const handleSaveEditCompany = async (e) => {
-    e.preventDefault();
-    if (!editingCompanyItem) return;
-    try {
-      setActionLoading(true);
-      await API.put(`/subscriptions/admin/company/${editingCompanyItem.pharmacy._id}`, editCompanyForm);
-      toast.success(`Company "${editCompanyForm.pharmacyName}" updated successfully!`);
-      setModalType(null);
-      setEditingCompanyItem(null);
-      fetchSuperAdminData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update company');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteCompany = async (item) => {
-    const confirmed = await toast.confirm({
-      title: 'Permanently Delete Company Tenant?',
-      message: `Are you sure you want to PERMANENTLY DELETE company "${item.pharmacy.name}" (${item.pharmacy.code}) and all its store branches and user accounts? This action cannot be undone.`,
-      confirmText: 'Delete Company',
-      cancelText: 'Cancel',
-      variant: 'danger',
+  const handleRenew = (pharmacyId) => {
+    const company = tenants.find(t => t._id === pharmacyId);
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Extend / Renew Subscription',
+      description: `Provision a 30-day manual trial extension or paid cycle extension for "${company?.companyName || 'this company'}".`,
+      confirmButtonText: 'Renew Subscription',
+      onConfirm: async (reason) => {
+        try {
+          await API.post(`/saas-admin/subscriptions/renew/${pharmacyId}`, { reason }, { headers: getAdminHeaders() });
+          toast.success('Subscription extended by 30 days.');
+          fetchPlatformData();
+        } catch {
+          toast.error('Failed to renew subscription.');
+        }
+      }
     });
-    if (!confirmed) return;
-
-    try {
-      setActionLoading(true);
-      await API.delete(`/subscriptions/admin/company/${item.pharmacy._id}`);
-      toast.success(`Company "${item.pharmacy.name}" deleted successfully.`);
-      fetchSuperAdminData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete company');
-    } finally {
-      setActionLoading(false);
-    }
   };
 
-  const handleCreateCoupon = (e) => {
-    e.preventDefault();
-    const newCoupon = {
-      id: String(Date.now()),
-      code: couponFormData.code.toUpperCase(),
-      discountPercent: Number(couponFormData.discountPercent),
-      maxUses: Number(couponFormData.maxUses),
-      usedCount: 0,
-      expiryDate: new Date(Date.now() + couponFormData.expiryDays * 86400000).toISOString().split('T')[0],
-      status: 'active'
-    };
-    setCoupons([newCoupon, ...coupons]);
-    toast.success(`Promotional Coupon "${newCoupon.code}" created successfully!`);
-    setModalType(null);
-    setCouponFormData({ code: '', discountPercent: 15, maxUses: 100, expiryDays: 30 });
+  const handleDeleteCompany = (pharmacyId) => {
+    const company = tenants.find(t => t._id === pharmacyId);
+    
+    setConfirmModal({
+      isOpen: true,
+      title: '⚠️ PURGE PHARMACY COMPANY',
+      description: `WARNING: This is a highly dangerous destructive action. You are about to permanently delete "${company?.companyName || 'this company'}" and purge all branch database registries.`,
+      confirmButtonText: 'PURGE DATA REGISTRY',
+      onConfirm: async (reason) => {
+        try {
+          await API.delete(`/saas-admin/companies/${pharmacyId}`, { data: { reason }, headers: getAdminHeaders() });
+          toast.success('Company purged successfully.');
+          fetchPlatformData();
+        } catch {
+          toast.error('Failed to delete company.');
+        }
+      }
+    });
   };
 
-  const handleCreateCategory = (e) => {
-    e.preventDefault();
-    const newCat = {
-      id: String(Date.now()),
-      name: categoryFormData.name,
-      description: categoryFormData.description,
-      count: 0
-    };
-    setCategories([...categories, newCat]);
-    toast.success(`Medicine Category "${newCat.name}" added to global catalog!`);
-    setModalType(null);
-    setCategoryFormData({ name: '', description: '' });
-  };
+  const overview = analytics?.platformOverview || {};
+  const subStats = analytics?.subscriptionStats || {};
+  const rev = analytics?.revenueAnalytics || {};
+  const comp = analytics?.companyAnalytics || {};
+  const alerts = analytics?.alerts || [];
 
-  const handleApproveInvoice = (invId) => {
-    setInvoices(invoices.map(i => i.id === invId ? { ...i, status: 'paid' } : i));
-    toast.success(`Approved offline payment for Invoice #${invId}`);
-  };
+  const fmtCurrency = (val) => `$${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const fmtNum = (val) => Number(val || 0).toLocaleString();
 
-  const handleResolveTicket = (tktId) => {
-    setSupportTickets(supportTickets.map(t => t.id === tktId ? { ...t, status: 'Resolved' } : t));
-    toast.success(`Ticket #${tktId} marked as Resolved`);
-    setModalType(null);
-  };
-
-  const filteredCompanies = (data?.companies || []).filter((item) => {
-    const matchesSearch = item.pharmacy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.pharmacy.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.owner.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.pharmacy.subscriptionStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filteredTenants = tenants.filter(t => {
+    const matchesSearch = 
+      t.pharmacy?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.pharmacy?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.owner?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === 'all') return matchesSearch;
+    return matchesSearch && t.status === statusFilter;
   });
 
-  const overview = fullAnalytics?.overview || {};
-  const plans = fullAnalytics?.plans || {};
-
-  const toggleTheme = () => {
-    const nextTheme = themeMode === 'dark' ? 'light' : 'dark';
-    setThemeMode(nextTheme);
-    toast.info(`Switched workspace theme mode to ${nextTheme.toUpperCase()}`);
-  };
-
-  // 12 Super Admin Sidebar Link Definitions
-  const navTabs = [
-    { id: 'dashboard', label: t('dashboardOverview', 'Dashboard Overview'), icon: BarChart3 },
-    { id: 'companies', label: t('companyStatistics', 'Companies'), icon: Building2, badge: data?.companies?.length || 2 },
-    { id: 'subscriptions', label: t('subscriptionPlans', 'Subscription Plans'), icon: CreditCard },
-    { id: 'billing', label: 'Billing & Invoices', icon: Receipt },
-    { id: 'branches', label: t('branchAnalytics', 'Branches'), icon: Layers },
-    { id: 'users', label: t('userAnalytics', 'Users & Roles (RBAC)'), icon: Users },
-    { id: 'catalog', label: 'Global Catalog & Categories', icon: Pill },
-    { id: 'coupons', label: 'Coupons & Promos', icon: Percent },
-    { id: 'reports', label: 'Reports & Analytics', icon: FileSpreadsheet },
-    { id: 'support', label: t('supportTickets', 'Support Tickets'), icon: LifeBuoy, badge: supportTickets.filter(t => t.status === 'Open').length },
-    { id: 'settings', label: t('settings', 'Platform Settings'), icon: Sliders },
-    { id: 'audit', label: t('securityAudits', 'Audit Logs'), icon: ShieldCheck }
-  ];
-
   return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} flex flex-col font-sans antialiased`}>
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8">
+      <div className="max-w-[1520px] mx-auto space-y-6">
 
-      {/* ------------------------------------------------------------
-          1. DEDICATED SUPER ADMIN TOP NAVIGATION BAR & BREADCRUMB
-         ------------------------------------------------------------ */}
-      <header className={`h-16 ${themeMode === 'dark' ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'} border-b backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40`}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <ShieldCheck className="w-6 h-6 text-white" />
+        {/* Top Header Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-5 md:p-6 rounded-2xl border border-slate-800 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-xl shadow-purple-500/20 font-black text-xl">
+              👑
             </div>
             <div>
-              <span className={`text-base font-extrabold ${themeMode === 'dark' ? 'text-white' : 'text-slate-900'} tracking-tight flex items-center gap-2`}>
-                {t('saasConsoleTitle', 'Pharmacy ERP')} <span className="px-2 py-0.5 text-[10px] uppercase font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full">SuperAdmin</span>
-              </span>
-              {/* Breadcrumb Navigation */}
-              <div className="flex items-center gap-1 text-[11px] text-slate-400 -mt-0.5">
-                <span>Home</span>
-                <ChevronRight className="w-3 h-3 text-slate-600" />
-                <span>SuperAdmin</span>
-                <ChevronRight className="w-3 h-3 text-slate-600" />
-                <span className="text-purple-400 font-semibold uppercase">{activeTab}</span>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-bold uppercase tracking-wider">
+                  Saad ERP Platform Controller
+                </span>
+                <span className="text-xs text-slate-400 font-mono">• Operator: {adminUser?.email || 'SuperAdmin'}</span>
               </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mt-0.5">
+                SaaS SuperAdmin Executive Dashboard
+              </h1>
             </div>
           </div>
 
-          <div className={`hidden md:flex items-center gap-2 ${themeMode === 'dark' ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-300'} border rounded-xl px-3 py-1.5 ml-6 w-72`}>
-            <Search className="w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              placeholder={t('globalSearchPlaceholder', 'Global Search (Companies, Metrics, Audit)...')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-transparent text-xs focus:outline-none w-full placeholder-slate-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveTab('audit')}
-            className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition cursor-pointer"
-          >
-            <Activity className="w-3.5 h-3.5 animate-pulse" />
-            {t('systemHealth100', 'System Health: 100% Operational')}
-          </button>
-
-          {/* Notifications Dropdown */}
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-bold font-mono">
+              Role: {adminUser?.role || 'Super Admin'}
+            </span>
             <button
-              onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition relative cursor-pointer"
-              title={t('notifications', 'Notifications')}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-purple-500 rounded-full animate-ping"></span>
-            </button>
-
-            {showNotificationsDropdown && (
-              <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 space-y-3">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <Bell className="w-4 h-4 text-purple-400" /> Notifications Stream
-                  </h4>
-                  <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-bold">3 New</span>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="p-2.5 bg-slate-800/60 rounded-xl space-y-1">
-                    <p className="font-semibold text-slate-200">Apex Health Pharmacy Onboarded</p>
-                    <p className="text-[10px] text-slate-400">Enterprise Plan • 2 minutes ago</p>
-                  </div>
-                  <div className="p-2.5 bg-slate-800/60 rounded-xl space-y-1">
-                    <p className="font-semibold text-emerald-400">MongoDB Atlas Backup Succeeded</p>
-                    <p className="text-[10px] text-slate-400">Automated Snapshot • 1 hour ago</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <LanguageSwitcher />
-
-          <button
-            onClick={toggleTheme}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
-            title="Toggle Dark / Light Mode"
-          >
-            {themeMode === 'dark' ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-400" />}
-          </button>
-
-          <div className="h-6 w-px bg-slate-800 mx-1"></div>
-
-          <div className="flex items-center gap-3 pl-2">
-            <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-md">
-              SA
-            </div>
-            <div className="hidden lg:block text-left">
-              <p className={`text-xs font-bold ${themeMode === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('superAdminRole', 'System Super Admin')}</p>
-              <p className="text-[10px] text-purple-400 font-semibold">superadmin@pharmacy.com</p>
-            </div>
-            <button
-              onClick={logout}
-              title="Logout Super Admin"
-              className="p-2 text-slate-400 hover:text-red-400 rounded-xl hover:bg-red-500/10 transition ml-1 cursor-pointer"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* ------------------------------------------------------------
-          2. MAIN SUPER ADMIN DASHBOARD CONTAINER (FIXED SIDEBAR + CONTENT)
-         ------------------------------------------------------------ */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Super Admin Dedicated Fixed Sidebar */}
-        <aside className={`w-64 ${themeMode === 'dark' ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'} border-r flex flex-col justify-between shrink-0 hidden md:flex`}>
-          <div className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)] scrollbar-thin">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2">{t('platformControl', 'Platform Control')}</p>
-            {navTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    isActive
-                      ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30 shadow-md font-bold'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-slate-500'}`} />
-                    <span>{tab.label}</span>
-                  </div>
-                  {tab.badge !== undefined && (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="p-4 border-t border-slate-800 space-y-2">
-            <button
-              onClick={() => setModalType('add_company')}
-              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => setShowCreateModal(true)}
+              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/25 transition-all flex items-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              {t('addNewCompany', '+ Add New Company')}
+              Provision New Pharmacy
+            </button>
+            <button
+              onClick={fetchPlatformData}
+              disabled={loading}
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition border border-slate-700 cursor-pointer"
+              title="Refresh Platform Analytics"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={handleAdminLogout}
+              className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
             </button>
           </div>
-        </aside>
+        </div>
 
-        {/* Main Content Workspace */}
-        <main className={`flex-1 overflow-y-auto p-6 space-y-8 ${themeMode === 'dark' ? 'bg-slate-950' : 'bg-slate-50'}`}>
-          {/* Quick Action Bar */}
-          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center justify-between flex-wrap gap-3 shadow-md">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <Zap className="w-4 h-4 text-purple-400" />
-              {t('platformQuickActions', 'Platform Quick Actions:')}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setModalType('add_company')}
-                className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+        {/* Actionable Dashboard Alert Banners */}
+        {alerts.length > 0 && (
+          <div className="space-y-2">
+            {alerts.map((alt) => (
+              <div
+                key={alt.id}
+                onClick={() => setSearchParams({ tab: 'companies' })}
+                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-medium cursor-pointer transition hover:opacity-95 ${
+                  alt.severity === 'high' || alt.severity === 'danger'
+                    ? 'bg-red-500/15 border-red-500/30 text-red-300'
+                    : alt.severity === 'warning'
+                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                    : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" /> {t('addCompanyBtn', '+ Add Company')}
-              </button>
-              <button
-                onClick={() => setModalType('add_coupon')}
-                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <Percent className="w-3.5 h-3.5" /> + New Coupon
-              </button>
-              <button
-                onClick={() => toast.success('Broadcast notification sent to all pharmacy tenant owners!')}
-                className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <Bell className="w-3.5 h-3.5" /> Broadcast Notice
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <FileText className="w-3.5 h-3.5" /> Export PDF Report
-              </button>
-            </div>
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="font-semibold">{alt.title}</span>
+                </div>
+                <span className="flex items-center gap-1 underline font-bold">
+                  Take Action <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            ))}
           </div>
+        )}
 
-          {/* MODULE 1: DASHBOARD OVERVIEW */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-8">
-              <section className="space-y-4">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-purple-400" />
-                  {t('saasExecutiveOverview', 'SaaS Executive Dashboard Overview')}
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  {[
-                    { label: t('totalCompanies', 'Total Companies'), value: overview.totalCompanies || data?.companies?.length || 2, color: 'text-white', bg: 'bg-blue-500/10' },
-                    { label: t('activeCompanies', 'Active Companies'), value: overview.activeCompanies || 2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                    { label: t('suspendedCompanies', 'Suspended Companies'), value: overview.suspendedCompanies || 0, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                    { label: t('expiredCompanies', 'Expired Companies'), value: overview.expiredCompanies || 0, color: 'text-red-400', bg: 'bg-red-500/10' },
-                    { label: t('trialCompanies', 'Trial Companies'), value: overview.trialCompanies || 1, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-                    { label: t('totalOutlets', 'Total Outlets'), value: overview.totalBranches || 3, color: 'text-indigo-400', bg: 'bg-indigo-500/10' }
-                  ].map((stat, i) => (
-                    <div key={i} className={`${stat.bg} border border-slate-800 p-4 rounded-2xl`}>
-                      <p className="text-[11px] text-slate-400 font-semibold uppercase">{stat.label}</p>
-                      <h3 className={`text-xl font-black mt-1 ${stat.color}`}>{stat.value}</h3>
-                    </div>
-                  ))}
+        {/* Navigation Tabs (Filtered dynamically by platform-level roles) */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
+          {[
+            { id: 'overview', label: 'Executive Overview', icon: BarChart3, roles: ['Super Admin', 'SuperAdmin', 'Finance Admin', 'Support Admin', 'Operations Admin'] },
+            { id: 'approvals', label: 'Pending Approvals', icon: ShieldCheck, badge: alerts.length > 0 ? alerts.length : null, roles: ['Super Admin', 'SuperAdmin', 'Support Admin'] },
+            { id: 'companies', label: 'Pharmacy Companies', icon: Building2, roles: ['Super Admin', 'SuperAdmin', 'Support Admin', 'Operations Admin'] },
+            { id: 'branches', label: 'Branch Outlets', icon: MapPin, roles: ['Super Admin', 'SuperAdmin', 'Support Admin'] },
+            { id: 'users', label: 'Staff Users', icon: Users, roles: ['Super Admin', 'SuperAdmin', 'Support Admin'] },
+            { id: 'subscriptions', label: 'Subscription Tiers', icon: CreditCard, roles: ['Super Admin', 'SuperAdmin', 'Operations Admin'] },
+            { id: 'revenue', label: 'Payment Pipeline', icon: DollarSign, roles: ['Super Admin', 'SuperAdmin', 'Finance Admin'] },
+            { id: 'invoices', label: 'Tax Invoices', icon: FileText, roles: ['Super Admin', 'SuperAdmin', 'Finance Admin'] },
+            { id: 'refunds', label: 'Refund Center', icon: RotateCcw, roles: ['Super Admin', 'SuperAdmin', 'Finance Admin'] },
+            { id: 'audit', label: 'Audit Logs', icon: Activity, roles: ['Super Admin', 'SuperAdmin', 'Support Admin', 'Operations Admin', 'Finance Admin'] },
+            { id: 'settings', label: 'Alert Settings', icon: Bell, roles: ['Super Admin', 'SuperAdmin', 'Support Admin', 'Operations Admin', 'Finance Admin'] },
+            { id: 'tickets', label: 'Support Desk', icon: MessageSquare, roles: ['Super Admin', 'SuperAdmin', 'Support Admin'] },
+            { id: 'reports', label: 'Platform Reports', icon: FileText, roles: ['Super Admin', 'SuperAdmin', 'Finance Admin'] },
+            { id: 'config', label: 'Platform Config', icon: Settings, roles: ['Super Admin', 'SuperAdmin', 'Operations Admin'] }
+          ].filter(tab => !adminUser?.role || tab.roles.includes(adminUser.role)).map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSearchParams({ tab: tab.id })}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#235347] text-[#DAF1DE] shadow-lg'
+                    : 'bg-[#163832] text-[#DAF1DE]/70 hover:text-[#DAF1DE] border border-transparent'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {tab.badge && (
+                  <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-bold rounded-full text-[10px]">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ================= TAB 1: EXECUTIVE OVERVIEW ================= */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            
+            {/* Top 16 Metric Cards Grid (Clickable) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+              
+              {/* Total Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('all'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-purple-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Total Companies</span>
+                  <Building2 className="w-3.5 h-3.5 text-purple-400" />
                 </div>
+                <div className="text-xl font-bold text-white mt-1 font-mono">{fmtNum(overview.totalCompanies || tenants.length)}</div>
+                <span className="text-[10px] text-purple-400 mt-0.5 block">Across platform</span>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase">{t('monthlyRevenueMRR', 'Monthly Revenue (MRR)')}</p>
-                      <h3 className="text-2xl font-black text-purple-400 mt-1">${overview.mrr || 1098}/mo</h3>
-                      <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-                        <TrendingUp className="w-3.5 h-3.5" /> +14.2% Growth vs Last Month
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 font-bold">MRR</div>
-                  </div>
-
-                  <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase">{t('annualProjectedRevenue', 'Annual Projected Revenue')}</p>
-                      <h3 className="text-2xl font-black text-blue-400 mt-1">${overview.annualRevenue || 13176}/yr</h3>
-                      <p className="text-xs text-slate-400 mt-1">ARR Run Rate</p>
-                    </div>
-                    <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 font-bold">ARR</div>
-                  </div>
-
-                  <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase">{t('totalPlatformStaff', 'Total Platform Staff')}</p>
-                      <h3 className="text-2xl font-black text-indigo-400 mt-1">{overview.totalUsers || 18}</h3>
-                      <p className="text-xs text-slate-400 mt-1">Owners, Pharmacists, Cashiers</p>
-                    </div>
-                    <div className="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-bold">USERS</div>
-                  </div>
+              {/* Active Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('active'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Active</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
-              </section>
+                <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{fmtNum(overview.activeCompanies)}</div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Operational</span>
+              </div>
+
+              {/* Pending Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('pending'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-amber-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Pending</span>
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="text-xl font-bold text-amber-400 mt-1 font-mono">{fmtNum(overview.pendingCompanies)}</div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Needs review</span>
+              </div>
+
+              {/* Trial Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('trial'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Trial</span>
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+                <div className="text-xl font-bold text-blue-400 mt-1 font-mono">{fmtNum(overview.trialCompanies)}</div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">14-day trials</span>
+              </div>
+
+              {/* Suspended Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('suspended'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-red-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Suspended</span>
+                  <Lock className="w-3.5 h-3.5 text-red-400" />
+                </div>
+                <div className="text-xl font-bold text-red-400 mt-1 font-mono">{fmtNum(overview.suspendedCompanies)}</div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Blocked</span>
+              </div>
+
+              {/* Expired Companies */}
+              <div
+                onClick={() => { setSearchParams({ tab: 'companies' }); setStatusFilter('expired'); }}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-orange-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Expired</span>
+                  <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
+                </div>
+                <div className="text-xl font-bold text-orange-400 mt-1 font-mono">{fmtNum(overview.expiredCompanies)}</div>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Past due</span>
+              </div>
+
+              {/* Total Users */}
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>Total Users</span>
+                  <Users className="w-3.5 h-3.5 text-indigo-400" />
+                </div>
+                <div className="text-xl font-bold text-white mt-1 font-mono">{fmtNum(overview.totalUsers)}</div>
+                <span className="text-[10px] text-emerald-400 mt-0.5 block">{fmtNum(overview.activeUsers)} active</span>
+              </div>
+
+              {/* MRR */}
+              <div
+                onClick={() => setSearchParams({ tab: 'revenue' })}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+                  <span>MRR</span>
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div className="text-xl font-bold text-emerald-400 mt-1 font-mono">{fmtCurrency(overview.mrr)}</div>
+                <span className="text-[10px] text-emerald-400 mt-0.5 block">ARR: {fmtCurrency(overview.arr)}</span>
+              </div>
+
             </div>
-          )}
 
-          {/* MODULE 2: COMPANIES (TENANT CRUD) */}
-          {activeTab === 'companies' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center flex-wrap gap-3">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-blue-400" />
-                  {t('companyStatistics', 'Pharmacy Company Tenants Management')} ({filteredCompanies.length})
-                </h2>
-
-                <div className="flex items-center gap-2">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none"
-                  >
-                    <option value="all">All Subscription Statuses</option>
-                    <option value="active">Active Subscriptions</option>
-                    <option value="suspended">Suspended Tenants</option>
-                    <option value="expired">Expired Tenants</option>
-                  </select>
-
-                  <button
-                    onClick={() => setModalType('add_company')}
-                    className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> + Onboard Company
-                  </button>
+            {/* Financial Row & Subscription Tiers */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              
+              {/* Subscription Breakdown Card */}
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-purple-400" />
+                    Subscription Distribution
+                  </h3>
+                  <span className="text-xs font-mono text-slate-400">{subStats.activeSubscriptions || 0} active</span>
                 </div>
-              </div>
 
-              {/* Full Company Tenants Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                      <tr>
-                        <th className="px-6 py-3.5">{t('pharmacyCompanyHeader', 'Pharmacy Company')}</th>
-                        <th className="px-6 py-3.5">{t('ownerProfileHeader', 'Owner Profile')}</th>
-                        <th className="px-6 py-3.5">{t('planTierHeader', 'Plan Tier')}</th>
-                        <th className="px-6 py-3.5">{t('outletsAndStaffHeader', 'Outlets & Staff')}</th>
-                        <th className="px-6 py-3.5">{t('subscriptionStatusHeader', 'Subscription Status')}</th>
-                        <th className="px-6 py-3.5 text-right">{t('superAdminControlsHeader', 'SuperAdmin Controls')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {filteredCompanies.map((item) => (
-                        <tr key={item.pharmacy._id} className="hover:bg-slate-800/40 transition">
-                          <td className="px-6 py-4 font-semibold text-white">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 font-bold text-xs shrink-0">
-                                {item.pharmacy.code?.slice(0, 3) || 'ERP'}
-                              </div>
-                              <div>
-                                <p className="text-white font-bold">{item.pharmacy.name}</p>
-                                <p className="text-[11px] text-slate-400">Code: {item.pharmacy.code}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-slate-200 font-bold">{item.owner?.name}</p>
-                            <p className="text-slate-400 text-[11px]">{item.owner?.email}</p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="px-2.5 py-1 rounded-full font-bold text-[11px] bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                              {item.pharmacy.plan || 'Professional'} (${item.subscription?.price || 299}/mo)
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 font-semibold text-slate-300">
-                            <span className="text-blue-400">{item.branchCount} Branches</span> / <span className="text-slate-400">{item.userCount} Users</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                                item.pharmacy.subscriptionStatus === 'suspended' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                                item.pharmacy.subscriptionStatus === 'active' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-                                'bg-red-500/15 text-red-400 border border-red-500/30'
-                              }`}>
-                                {item.pharmacy.subscriptionStatus?.toUpperCase()}
-                              </span>
-                              <p className="text-[11px] font-semibold text-purple-300 flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-purple-400 inline shrink-0" />
-                                {item.remainingDays !== undefined ? `${item.remainingDays} Days Left` : '30 Days Left'}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-right space-x-1.5">
-                            <button
-                              onClick={() => handleOpenEditCompany(item)}
-                              className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
-                              title="Edit Company Details & Owner Password"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" /> Edit
-                            </button>
-                            <button
-                              onClick={() => { setSelectedItem(item); setModalType('company_detail'); }}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
-                              title="View Complete Company Statistics"
-                            >
-                              <Eye className="w-3.5 h-3.5" /> View
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCompany(item)}
-                              className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center gap-1"
-                              title="Delete Company Tenant"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 3: SUBSCRIPTION PLANS */}
-          {activeTab === 'subscriptions' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-purple-400" />
-                  {t('subscriptionPlans', 'Subscription Plans & SaaS Pricing Tiers')}
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { name: 'Starter Plan', price: 99, color: 'text-white', border: 'border-slate-800', branches: '1 Outlet', users: 'Up to 5 Users', count: plans.starterPlans || 1 },
-                  { name: 'Professional Plan', price: 299, color: 'text-emerald-400', border: 'border-emerald-500/30', branches: 'Up to 5 Outlets', users: 'Up to 25 Users', count: plans.proPlans || 1 },
-                  { name: 'Enterprise Plan', price: 799, color: 'text-blue-400', border: 'border-blue-500/30', branches: 'Unlimited Outlets', users: 'Unlimited Users + AI', count: plans.enterprisePlans || 0 },
-                  { name: 'Unlimited Plan', price: 1499, color: 'text-purple-400', border: 'border-purple-500/30', branches: 'Dedicated Cluster', users: '24/7 SLA Manager', count: plans.unlimitedPlans || 0 }
-                ].map((p, idx) => (
-                  <div key={idx} className={`bg-slate-900 border ${p.border} p-5 rounded-2xl space-y-4 shadow-lg flex flex-col justify-between`}>
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`text-xs font-bold ${p.color}`}>{p.name}</span>
-                        <span className="px-2.5 py-0.5 text-[10px] font-extrabold bg-slate-800 text-slate-300 rounded-full">${p.price}/mo</span>
-                      </div>
-                      <h3 className={`text-2xl font-black ${p.color}`}>{p.count} Active Tenants</h3>
-                      <div className="space-y-1.5 mt-3 text-xs text-slate-400">
-                        <p className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> {p.branches}</p>
-                        <p className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> {p.users}</p>
-                        <p className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-400" /> Full POS & FEFO Batches</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setModalType('edit_plan')}
-                      className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer"
-                    >
-                      Configure Plan Limits
-                    </button>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80">
+                    <span className="text-slate-300 font-medium">Starter ($99/mo)</span>
+                    <span className="font-mono font-bold text-slate-200">{subStats.starterPlans || 0} subs</span>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 4: BILLING & INVOICES */}
-          {activeTab === 'billing' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Receipt className="w-5 h-5 text-emerald-400" />
-                  Subscription Invoices & Payment Requests ({invoices.length})
-                </h2>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                      <tr>
-                        <th className="px-6 py-3.5">Invoice #</th>
-                        <th className="px-6 py-3.5">Pharmacy Company</th>
-                        <th className="px-6 py-3.5">Plan Tier</th>
-                        <th className="px-6 py-3.5">Amount ($)</th>
-                        <th className="px-6 py-3.5">Method</th>
-                        <th className="px-6 py-3.5">Status</th>
-                        <th className="px-6 py-3.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {invoices.map((inv) => (
-                        <tr key={inv.id} className="hover:bg-slate-800/40 transition">
-                          <td className="px-6 py-4 font-bold text-white">{inv.id}</td>
-                          <td className="px-6 py-4 font-semibold text-slate-200">{inv.company}</td>
-                          <td className="px-6 py-4">{inv.plan}</td>
-                          <td className="px-6 py-4 font-black text-emerald-400">${inv.amount}</td>
-                          <td className="px-6 py-4 text-slate-400">{inv.method}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-full font-bold text-[11px] ${
-                              inv.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-                              inv.status === 'pending' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                              'bg-red-500/15 text-red-400 border border-red-500/30'
-                            }`}>
-                              {inv.status.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right space-x-2">
-                            {inv.status === 'pending' && (
-                              <button
-                                onClick={() => handleApproveInvoice(inv.id)}
-                                className="px-3 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold cursor-pointer"
-                              >
-                                Approve Payment
-                              </button>
-                            )}
-                            <button
-                              onClick={() => toast.success(`Downloaded invoice ${inv.id} PDF`)}
-                              className="px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg text-xs font-bold cursor-pointer"
-                            >
-                              <Download className="w-3.5 h-3.5 inline" /> Receipt
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80">
+                    <span className="text-slate-300 font-medium">Professional ($299/mo)</span>
+                    <span className="font-mono font-bold text-emerald-400">{subStats.proPlans || 0} subs</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80">
+                    <span className="text-slate-300 font-medium">Enterprise ($799/mo)</span>
+                    <span className="font-mono font-bold text-blue-400">{subStats.enterprisePlans || 0} subs</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80">
+                    <span className="text-slate-300 font-medium">Unlimited ($1,499/mo)</span>
+                    <span className="font-mono font-bold text-purple-400">{subStats.unlimitedPlans || 0} subs</span>
+                  </div>
                 </div>
               </div>
-            </section>
-          )}
 
-          {/* MODULE 5: BRANCHES */}
-          {activeTab === 'branches' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-blue-400" />
-                  Multi-Tenant Branch Outlets Directory
-                </h2>
-                <button
-                  onClick={() => setModalType('add_branch')}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  + Add Outlet Branch
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { name: 'HealthCare Plus HQ Main Branch', code: 'HC-01', manager: 'David Ross (HQ Manager)', type: 'Headquarter', status: 'Active' },
-                  { name: 'HealthCare Plus Downtown Outlet', code: 'HC-02', manager: 'Elena Rostova', type: 'Retail Branch', status: 'Active' },
-                  { name: 'MedixCare Central Branch', code: 'MX-01', manager: 'Sarah Jenkins', type: 'Headquarter', status: 'Active' }
-                ].map((b, idx) => (
-                  <div key={idx} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-bold text-white text-sm">{b.name}</h3>
-                        <p className="text-xs text-slate-400">Code: {b.code} • {b.type}</p>
-                      </div>
-                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        {b.status}
-                      </span>
+              {/* Monthly Revenue Velocity Card */}
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    Revenue Trajectory
+                  </h3>
+                  <span className="text-xs font-mono text-emerald-400 font-semibold">{comp.growthRate || '+18.4%'}</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>This Month Billing</span>
+                      <span className="text-white font-mono font-bold">{fmtCurrency(overview.thisMonthRevenue)}</span>
                     </div>
-                    <div className="border-t border-slate-800 pt-2 text-xs text-slate-300 space-y-1">
-                      <p><strong>Manager:</strong> {b.manager}</p>
+                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-emerald-400 w-3/4 rounded-full" />
                     </div>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
 
-          {/* MODULE 6: USERS & ROLES (RBAC) */}
-          {activeTab === 'users' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-400" />
-                  Cross-Tenant User Roster & RBAC Matrix
-                </h2>
-                <button
-                  onClick={() => toast.success('Opened RBAC Permission Matrix Editor')}
-                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  <Lock className="w-3.5 h-3.5 inline mr-1" /> Configure RBAC Permissions
-                </button>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400 font-bold block">{t('companyOwnerRole', 'Company Owners')}</span>
-                  <span className="text-2xl font-black text-purple-400 mt-1 block">2</span>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400 font-bold block">{t('branchManagerRole', 'Branch Managers')}</span>
-                  <span className="text-2xl font-black text-blue-400 mt-1 block">4</span>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400 font-bold block">{t('pharmacistRole', 'Pharmacists')}</span>
-                  <span className="text-2xl font-black text-emerald-400 mt-1 block">6</span>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400 font-bold block">{t('cashierRole', 'Cashiers')}</span>
-                  <span className="text-2xl font-black text-amber-400 mt-1 block">8</span>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 7: GLOBAL CATALOG & CATEGORIES */}
-          {activeTab === 'catalog' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Pill className="w-5 h-5 text-purple-400" />
-                  Master Medicine Categories & Drug Catalog ({categories.length})
-                </h2>
-                <button
-                  onClick={() => setModalType('add_category')}
-                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  + Add Master Category
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {categories.map((cat) => (
-                  <div key={cat.id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-bold text-white text-sm">{cat.name}</h3>
-                      <span className="bg-purple-500/20 text-purple-300 text-xs px-2 py-0.5 rounded-full font-bold">{cat.count} Items</span>
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>Total Cumulative Revenue</span>
+                      <span className="text-white font-mono font-bold">{fmtCurrency(overview.totalRevenue)}</span>
                     </div>
-                    <p className="text-xs text-slate-400">{cat.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 8: COUPONS */}
-          {activeTab === 'coupons' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Percent className="w-5 h-5 text-emerald-400" />
-                  SaaS Promotional Discount Coupons ({coupons.length})
-                </h2>
-                <button
-                  onClick={() => setModalType('add_coupon')}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  + Create Promotional Coupon
-                </button>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="px-6 py-3.5">Coupon Code</th>
-                      <th className="px-6 py-3.5">Discount (%)</th>
-                      <th className="px-6 py-3.5">Max Uses</th>
-                      <th className="px-6 py-3.5">Used Count</th>
-                      <th className="px-6 py-3.5">Expiry Date</th>
-                      <th className="px-6 py-3.5">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {coupons.map((c) => (
-                      <tr key={c.id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-6 py-4 font-black text-emerald-400">{c.code}</td>
-                        <td className="px-6 py-4 font-bold text-white">{c.discountPercent}% OFF</td>
-                        <td className="px-6 py-4">{c.maxUses}</td>
-                        <td className="px-6 py-4">{c.usedCount}</td>
-                        <td className="px-6 py-4 text-slate-400">{c.expiryDate}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full font-bold text-[11px] ${c.status === 'active' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-400'}`}>
-                            {c.status.toUpperCase()}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 9: REPORTS & ANALYTICS */}
-          {activeTab === 'reports' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5 text-indigo-400" />
-                  SaaS Executive Reports & Export Engine
-                </h2>
-                <div className="flex gap-2">
-                  <button onClick={() => window.print()} className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer">
-                    <Download className="w-3.5 h-3.5 inline mr-1" /> Export PDF
-                  </button>
-                  <button onClick={() => toast.success('Exported CSV Spreadsheet Report')} className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer">
-                    <FileSpreadsheet className="w-3.5 h-3.5 inline mr-1" /> Export Excel
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
-                  <h3 className="font-bold text-white text-sm">Financial Revenue & P&L Statement</h3>
-                  <p className="text-xs text-slate-400">Comprehensive breakdown of MRR, ARR, churn rate, and payment methods.</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-3">
-                  <h3 className="font-bold text-white text-sm">Tenant Growth & Registration Analytics</h3>
-                  <p className="text-xs text-slate-400">Monthly new onboarding metrics and regional distribution.</p>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 10: SUPPORT TICKETS */}
-          {activeTab === 'support' && (
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <LifeBuoy className="w-5 h-5 text-blue-400" />
-                  Tenant Support Tickets & SLA Helpdesk ({supportTickets.length})
-                </h2>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="px-6 py-3.5">Ticket #</th>
-                      <th className="px-6 py-3.5">Pharmacy Company</th>
-                      <th className="px-6 py-3.5">Subject</th>
-                      <th className="px-6 py-3.5">Priority</th>
-                      <th className="px-6 py-3.5">Status</th>
-                      <th className="px-6 py-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {supportTickets.map((tkt) => (
-                      <tr key={tkt.id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-6 py-4 font-bold text-white">{tkt.id}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-200">{tkt.company}</td>
-                        <td className="px-6 py-4">{tkt.subject}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tkt.priority === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                            {tkt.priority}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-emerald-400">{tkt.status}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleResolveTicket(tkt.id)}
-                            className="px-3 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold cursor-pointer"
-                          >
-                            Mark Resolved
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* MODULE 11: PLATFORM SETTINGS */}
-          {activeTab === 'settings' && (
-            <section className="space-y-4">
-              <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-purple-400" />
-                SaaS Platform Configuration & Localization Settings
-              </h2>
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Platform Name</label>
-                    <input
-                      type="text"
-                      value={platformSettings.appName}
-                      onChange={(e) => setPlatformSettings({ ...platformSettings, appName: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Support Email</label>
-                    <input
-                      type="email"
-                      value={platformSettings.supportEmail}
-                      onChange={(e) => setPlatformSettings({ ...platformSettings, supportEmail: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Primary Currency</label>
-                    <input
-                      type="text"
-                      value={platformSettings.currency}
-                      onChange={(e) => setPlatformSettings({ ...platformSettings, currency: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Default Tax GST (%)</label>
-                    <input
-                      type="number"
-                      value={platformSettings.taxRate}
-                      onChange={(e) => setPlatformSettings({ ...platformSettings, taxRate: Number(e.target.value) })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
-                    />
+                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-4/5 rounded-full" />
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => toast.success('Platform Configuration settings updated successfully!')}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  Save Settings
-                </button>
               </div>
-            </section>
-          )}
 
-          {/* MODULE 12: AUDIT LOGS */}
-          {activeTab === 'audit' && (
-            <section className="space-y-4">
-              <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                Platform Security & Admin Actions Audit Trail ({auditLogs.length})
-              </h2>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                    <tr>
-                      <th className="px-6 py-3.5">Log #</th>
-                      <th className="px-6 py-3.5">Action Event</th>
-                      <th className="px-6 py-3.5">Details</th>
-                      <th className="px-6 py-3.5">Admin User</th>
-                      <th className="px-6 py-3.5">IP Address</th>
-                      <th className="px-6 py-3.5 text-right">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-6 py-4 font-bold text-white">{log.id}</td>
-                        <td className="px-6 py-4 font-semibold text-purple-400">{log.action}</td>
-                        <td className="px-6 py-4 text-slate-200">{log.details}</td>
-                        <td className="px-6 py-4 font-bold text-white">{log.user}</td>
-                        <td className="px-6 py-4 text-slate-400">{log.ip}</td>
-                        <td className="px-6 py-4 text-right text-slate-500">{log.timestamp}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              {/* System Infrastructure Health */}
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    SaaS Infrastructure
+                  </h3>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-xs font-bold">100% UP</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 text-[11px] block">API Gateway</span>
+                    <span className="font-bold text-emerald-400 font-mono">24ms latency</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 text-[11px] block">MongoDB Cluster</span>
+                    <span className="font-bold text-emerald-400 font-mono">CONNECTED</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 text-[11px] block">Server Memory</span>
+                    <span className="font-bold text-slate-200 font-mono">{analytics?.systemHealth?.memoryUsage || '32%'}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="text-slate-400 text-[11px] block">Disk Storage</span>
+                    <span className="font-bold text-slate-200 font-mono">{analytics?.systemHealth?.diskUsage || '21%'}</span>
+                  </div>
+                </div>
               </div>
-            </section>
-          )}
-        </main>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= TAB: PENDING APPROVALS GATEKEEPER ================= */}
+        {activeTab === 'approvals' && (
+          <div className="space-y-4">
+            <PendingApprovals />
+          </div>
+        )}
+
+        {/* ================= TAB: SUBSCRIPTION PLAN GOVERNANCE & TIERS ================= */}
+        {activeTab === 'subscriptions' && (
+          <div className="space-y-4">
+            <SubscriptionPlanManager />
+          </div>
+        )}
+
+        {/* ================= TAB: PAYMENTS & REVENUE PIPELINE ================= */}
+        {(activeTab === 'revenue' || activeTab === 'payments') && (
+          <div className="space-y-4">
+            <PaymentManager />
+          </div>
+        )}
+
+        {/* ================= TAB: BRANCH OUTLETS DIRECTORY & SALES ================= */}
+        {activeTab === 'branches' && (
+          <div className="space-y-4">
+            <BranchManager />
+          </div>
+        )}
+
+        {/* ================= TAB: COMPANY USERS DIRECTORY & SUPPORT ================= */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <CompanyUsersManager />
+          </div>
+        )}
+
+        {/* ================= TAB: TAX INVOICE MANAGEMENT ================= */}
+        {activeTab === 'invoices' && (
+          <div className="space-y-4">
+            <InvoiceManager />
+          </div>
+        )}
+
+        {/* ================= TAB: REFUND MANAGEMENT & PROVIDER DISPATCH ================= */}
+        {activeTab === 'refunds' && (
+          <div className="space-y-4">
+            <RefundManager />
+          </div>
+        )}
+
+        {/* ================= TAB: PLATFORM IMMUTABLE AUDIT LOGS ================= */}
+        {activeTab === 'audit' && (
+          <div className="space-y-4">
+            <PlatformAuditManager />
+          </div>
+        )}
+
+        {/* ================= TAB: PLATFORM NOTIFICATION CONFIGURATION ================= */}
+        {activeTab === 'settings' && (
+          <div className="space-y-4">
+            <PlatformNotificationSettings />
+          </div>
+        )}
+
+        {/* ================= TAB: PLATFORM SUPPORT DESK (TICKETS) ================= */}
+        {activeTab === 'tickets' && (
+          <div className="space-y-4">
+            <PlatformSupportTickets />
+          </div>
+        )}
+
+        {/* ================= TAB: PLATFORM EXECUTIVE REPORTS & retention ================= */}
+        {activeTab === 'reports' && (
+          <div className="space-y-4">
+            <PlatformReportsManager />
+          </div>
+        )}
+
+        {/* ================= TAB: PLATFORM GLOBAL POLICY GOVERNANCE ================= */}
+        {activeTab === 'config' && (
+          <div className="space-y-4">
+            <PlatformSettingsPanel />
+          </div>
+        )}
+
+        {/* ================= TAB 2: COMPLETE SAAS COMPANY MANAGEMENT ================= */}
+        {(activeTab === 'companies' || activeTab === 'overview') && (
+          <div className="space-y-4">
+            <SuperAdminCompanyTable
+              companies={tenants}
+              loading={loading}
+              onOpenCreate={() => setShowCreateModal(true)}
+              onToggleSuspend={handleToggleSuspend}
+              onRenew={handleRenew}
+              onDelete={handleDeleteCompany}
+            />
+          </div>
+        )}
+
       </div>
 
-      {/* ------------------------------------------------------------
-          3. MODAL DIALOGS FOR CRUD ACTIONS
-         ------------------------------------------------------------ */}
-      {modalType === 'add_company' && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+      {/* PROVISION NEW PHARMACY COMPANY MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-purple-400" />
-                Onboard New Pharmacy Company
+                Provision New Pharmacy Organization
               </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
+
             <form onSubmit={handleCreateCompany} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Company Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Apex Health Pharmacy"
-                  value={companyFormData.name}
-                  onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Owner Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="owner@apexhealth.com"
-                  value={companyFormData.email}
-                  onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Assign Package Plan</label>
-                <select
-                  value={companyFormData.plan}
-                  onChange={(e) => setCompanyFormData({ ...companyFormData, plan: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                >
-                  <option value="Starter">Starter Plan ($99/mo)</option>
-                  <option value="Professional">Professional Plan ($299/mo)</option>
-                  <option value="Enterprise">Enterprise Plan ($799/mo)</option>
-                  <option value="Unlimited">Unlimited Plan ($1,499/mo)</option>
-                </select>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModalType(null)} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">Cancel</button>
-                <button type="submit" disabled={actionLoading} className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
-                  {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Onboard Company'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT COMPANY MODAL */}
-      {modalType === 'edit_company' && editingCompanyItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-purple-400" />
-                Edit Company & Owner Credentials
-              </h3>
-              <button onClick={() => { setModalType(null); setEditingCompanyItem(null); }} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
-            </div>
-
-            <form onSubmit={handleSaveEditCompany} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Company Name *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Company Name *</label>
                   <input
                     type="text"
                     required
-                    value={editCompanyForm.pharmacyName}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, pharmacyName: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                    value={companyForm.companyName}
+                    onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
+                    placeholder="Al-Shifa Pharmacy"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Company Code *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Company Code (Unique) *</label>
                   <input
                     type="text"
                     required
-                    value={editCompanyForm.pharmacyCode}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, pharmacyCode: e.target.value.toUpperCase() })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono uppercase"
+                    value={companyForm.companyCode}
+                    onChange={(e) => setCompanyForm({ ...companyForm, companyCode: e.target.value.toUpperCase() })}
+                    placeholder="SHIFA01"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Owner Full Name *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Owner Full Name *</label>
                   <input
                     type="text"
                     required
-                    value={editCompanyForm.ownerName}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerName: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                    value={companyForm.ownerName}
+                    onChange={(e) => setCompanyForm({ ...companyForm, ownerName: e.target.value })}
+                    placeholder="Dr. Ahmed Khan"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Owner Email Address *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Owner Email (Login) *</label>
                   <input
                     type="email"
                     required
-                    value={editCompanyForm.ownerEmail}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerEmail: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono"
+                    value={companyForm.ownerEmail}
+                    onChange={(e) => setCompanyForm({ ...companyForm, ownerEmail: e.target.value })}
+                    placeholder="owner@shifapharmacy.com"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1 flex items-center gap-1">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Reset Owner Password (Optional)
-                </label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Owner Password *</label>
                 <input
                   type="password"
-                  placeholder="Enter new password to change owner password, or leave blank"
-                  value={editCompanyForm.ownerPassword}
-                  onChange={(e) => setEditCompanyForm({ ...editCompanyForm, ownerPassword: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                  required
+                  value={companyForm.ownerPassword}
+                  onChange={(e) => setCompanyForm({ ...companyForm, ownerPassword: e.target.value })}
+                  placeholder="••••••••••••"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-500"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Plan Tier</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Subscription Plan *</label>
                   <select
-                    value={editCompanyForm.plan}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, plan: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-bold"
+                    value={companyForm.plan}
+                    onChange={(e) => setCompanyForm({ ...companyForm, plan: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-500"
                   >
-                    <option value="Starter">Starter ($99/mo)</option>
-                    <option value="Professional">Professional ($299/mo)</option>
-                    <option value="Enterprise">Enterprise ($799/mo)</option>
-                    <option value="Unlimited">Unlimited ($1,499/mo)</option>
+                    <option value="Starter">Starter (Single Branch)</option>
+                    <option value="Professional">Professional (Up to 5 Branches)</option>
+                    <option value="Enterprise">Enterprise (Unlimited Branches)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Status</label>
-                  <select
-                    value={editCompanyForm.subscriptionStatus}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, subscriptionStatus: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-bold"
-                  >
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="expired">Expired</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold uppercase text-[10px] mb-1">Extend Access</label>
-                  <select
-                    value={editCompanyForm.extendDays}
-                    onChange={(e) => setEditCompanyForm({ ...editCompanyForm, extendDays: Number(e.target.value) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-purple-300 font-bold"
-                  >
-                    <option value={0}>No Extension</option>
-                    <option value={30}>+30 Days</option>
-                    <option value={60}>+60 Days</option>
-                    <option value={90}>+90 Days</option>
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Duration (Days) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={companyForm.subscriptionDurationDays}
+                    onChange={(e) => setCompanyForm({ ...companyForm, subscriptionDurationDays: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-500"
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => { setModalType(null); setEditingCompanyItem(null); }}
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition cursor-pointer"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={actionLoading}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white cursor-pointer shadow-lg shadow-purple-600/20"
                 >
-                  {actionLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                  {submitting ? 'Provisioning...' : 'Provision Pharmacy & Grant Access'}
                 </button>
               </div>
             </form>
@@ -1264,169 +786,16 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
-      {/* VIEW COMPANY STATISTICS DETAIL MODAL */}
-      {modalType === 'company_detail' && selectedItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 font-bold text-sm">
-                  {selectedItem.pharmacy.code?.slice(0, 3) || 'ERP'}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">{selectedItem.pharmacy.name}</h3>
-                  <p className="text-xs text-slate-400">Code: {selectedItem.pharmacy.code}</p>
-                </div>
-              </div>
-              <button onClick={() => { setModalType(null); setSelectedItem(null); }} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
-            </div>
+      {/* DANGEROUS/SENSITIVE ACTION CONFIRMATION MODAL */}
+      <PlatformConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        confirmButtonText={confirmModal.confirmButtonText}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Company Owner</span>
-                <p className="text-white font-bold">{selectedItem.owner?.name}</p>
-                <p className="text-purple-400 font-mono">{selectedItem.owner?.email}</p>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Subscription Plan</span>
-                <p className="text-white font-bold">{selectedItem.pharmacy.plan || 'Professional'}</p>
-                <p className="text-emerald-400 font-semibold">Status: {selectedItem.pharmacy.subscriptionStatus?.toUpperCase()}</p>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Outlets & Staff</span>
-                <p className="text-blue-400 font-bold">{selectedItem.branchCount} Active Branches</p>
-                <p className="text-slate-300 font-bold">{selectedItem.userCount} Total Users</p>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Access Expiration</span>
-                <p className="text-purple-300 font-bold flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-purple-400" />
-                  {selectedItem.remainingDays !== undefined ? `${selectedItem.remainingDays} Days Left` : '30 Days Left'}
-                </p>
-                <p className="text-slate-400 text-[10px]">{selectedItem.expiryDateFormatted ? `Expires: ${selectedItem.expiryDateFormatted}` : ''}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
-              <button
-                onClick={() => handleOpenEditCompany(selectedItem)}
-                className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Edit3 className="w-3.5 h-3.5" /> Edit Credentials
-              </button>
-              <button
-                onClick={() => handleDeleteCompany(selectedItem)}
-                className="py-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete Company
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Coupon Modal */}
-      {modalType === 'add_coupon' && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Percent className="w-5 h-5 text-emerald-400" />
-                Create Promotional Coupon
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleCreateCoupon} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Coupon Code</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. SUMMER2026"
-                  value={couponFormData.code}
-                  onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Discount (%)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max="100"
-                    value={couponFormData.discountPercent}
-                    onChange={(e) => setCouponFormData({ ...couponFormData, discountPercent: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Max Uses</label>
-                  <input
-                    type="number"
-                    required
-                    value={couponFormData.maxUses}
-                    onChange={(e) => setCouponFormData({ ...couponFormData, maxUses: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModalType(null)} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">Create Coupon</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Category Modal */}
-      {modalType === 'add_category' && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Pill className="w-5 h-5 text-purple-400" />
-                Add Master Category
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleCreateCategory} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Category Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Pediatric Care"
-                  value={categoryFormData.name}
-                  onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  placeholder="Category scope and drug classifications..."
-                  value={categoryFormData.description}
-                  onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setModalType(null)} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition cursor-pointer">Add Category</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
-
-export default SuperAdminDashboard;
+}

@@ -48,17 +48,17 @@ export const Select = React.forwardRef(
             name={name}
             disabled={disabled}
             required={required}
-            className={`w-full appearance-none bg-slate-900/80 dark:bg-slate-900/80 light:bg-white text-slate-100 dark:text-slate-100 light:text-slate-900 border transition-all duration-150 outline-none ${
+            className={`w-full appearance-none bg-[#DAF1DE] text-[#051F20] border transition-all duration-150 outline-none ${
               error
                 ? 'border-red-500/80 focus:ring-2 focus:ring-red-500/50 focus:border-red-500'
-                : 'border-slate-700/80 dark:border-slate-700/80 light:border-slate-300 focus:ring-2 focus:ring-accent focus:border-accent'
+                : 'border-[#8EB69B] focus:ring-2 focus:ring-[#235347]/50 focus:border-[#235347]'
             } ${sizeClasses[size] || sizeClasses.md} ${
               disabled ? 'opacity-50 cursor-not-allowed bg-slate-800/40' : 'cursor-pointer'
             } ${className}`}
             {...props}
           >
             {placeholder && (
-              <option value="" disabled className="text-slate-500 bg-slate-900 text-slate-400">
+              <option value="" disabled className="text-[#235347] bg-[#DAF1DE]">
                 {placeholder}
               </option>
             )}
@@ -68,7 +68,7 @@ export const Select = React.forwardRef(
                     key={opt.value ?? opt.id ?? opt.label}
                     value={opt.value}
                     disabled={opt.disabled}
-                    className="bg-slate-900 text-slate-100 dark:bg-slate-900 dark:text-slate-100 light:bg-white light:text-slate-900"
+                    className="bg-[#DAF1DE] text-[#051F20]"
                   >
                     {opt.label}
                   </option>

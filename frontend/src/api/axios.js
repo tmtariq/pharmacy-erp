@@ -16,8 +16,18 @@ API.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     const activeBranchId = localStorage.getItem('activeBranchId');
 
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers) {
+      if (config.url && config.url.includes('/saas-admin')) {
+        const adminToken = localStorage.getItem('saasAdminToken');
+        if (adminToken) {
+          config.headers.Authorization = `Bearer ${adminToken}`;
+        }
+      } else {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
     }
 
     if (activeBranchId && config.headers) {
@@ -63,10 +73,18 @@ API.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('activeBranchId');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      if (originalRequest && originalRequest.url?.includes('/saas-admin')) {
+        localStorage.removeItem('saasAdminToken');
+        localStorage.removeItem('saasAdminUser');
+        if (!window.location.pathname.includes('/saas-admin/login')) {
+          window.location.href = '/saas-admin/login';
+        }
+      } else {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('activeBranchId');
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/saas-admin')) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

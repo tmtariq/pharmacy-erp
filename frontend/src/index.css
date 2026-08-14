@@ -2,49 +2,137 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,450;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
+
+/* ----------------------------------------------------
+   Modern Editorial Era Animation System & Glow Tokens
+   ---------------------------------------------------- */
+@keyframes editorialReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes slowGlowPulse {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(1) translate(0px, 0px);
+    filter: blur(80px);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.1) translate(20px, -20px);
+    filter: blur(100px);
+  }
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lineDraw {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.animate-reveal {
+  animation: editorialReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-glow-pulse {
+  animation: slowGlowPulse 10s ease-in-out infinite;
+}
+
+.animate-card-fade {
+  animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-line {
+  animation: lineDraw 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glow Typography & Decorative Lines */
+.text-glow-accent {
+  text-shadow: 0 0 20px rgba(114, 214, 193, 0.25);
+}
+
+.text-glow-blue {
+  text-shadow: 0 0 20px rgba(11, 94, 142, 0.35);
+}
+
+.glow-card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(11, 94, 142, 0.15), 0 0 1px 1px rgba(114, 214, 193, 0.2);
+  border-color: rgba(114, 214, 193, 0.3) !important;
+}
 
 /* Enterprise Healthcare Product Design System (Inspired by Enhance Healthcare Product Design) */
 
 @theme {
   --font-sans: 'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'Fraunces', serif;
+  --font-display: 'Cormorant Garamond', serif;
 
-  /* Primary Brand Medical Colors */
-  --color-primary: #0B5E8E;
-  --color-primary-dark: #08476B;
-  --color-secondary: #168A8A;
-  --color-accent: #72D6C1;
+  /* Primary Brand Medical Colors - Uploaded Teal Palette */
+  --color-deepest: #051F20;
+  --color-dark: #062B26;
+  --color-deep-teal: #163832;
+  --color-teal: #235347;
+  --color-sage: #8EB69B;
+  --color-mint: #DAF1DE;
+
+  --color-primary: #235347;
+  --color-primary-dark: #163832;
+  --color-secondary: #8EB69B;
+  --color-accent: #8EB69B;
 
   /* Background & Surface */
-  --color-bg-app: #F2F9FC;
-  --color-surface: #FFFFFF;
-  --color-border: #D9E8EF;
+  --color-bg-app: #DAF1DE;
+  --color-surface: #DAF1DE;
+  --color-border: transparent;
 
   /* Typography */
-  --color-heading: #17324D;
-  --color-body: #486273;
-  --color-muted: #7C919D;
+  --color-heading: #051F20;
+  --color-body: #163832;
+  --color-muted: #235347;
 
   /* Status Colors */
-  --color-success: #249B72;
+  --color-success: #8EB69B;
   --color-warning: #D99A2B;
   --color-error: #D95353;
-  --color-info: #3B8FC4;
+  --color-info: #235347;
 
-  /* Legacy utility bindings */
-  --color-primary-50: #F2F9FC;
-  --color-primary-100: #E1F0F7;
-  --color-primary-500: #0B5E8E;
-  --color-primary-600: #08476B;
-  --color-primary-700: #063550;
+  /* Legacy utility bindings mapping to the new palette */
+  --color-primary-50: #DAF1DE;
+  --color-primary-100: #DAF1DE;
+  --color-primary-500: #235347;
+  --color-primary-600: #163832;
+  --color-primary-700: #062B26;
 
-  --color-teal-500: #168A8A;
-  --color-teal-600: #127272;
+  --color-teal-500: #235347;
+  --color-teal-600: #163832;
 
-  --color-success-500: #249B72;
-  --color-success-600: #1E8260;
+  --color-success-500: #8EB69B;
+  --color-success-600: #235347;
 
   --color-danger-500: #D95353;
   --color-danger-600: #C24141;
@@ -52,101 +140,101 @@
   --color-warning-500: #D99A2B;
   --color-warning-600: #BA801E;
 
-  --bg-app: #F2F9FC;
-  --bg-surface: #FFFFFF;
-  --bg-surface-elevated: #EAF4F9;
-  --border-app: #D9E8EF;
-  --border-subtle: #C5DCE6;
-  --text-main: #17324D;
-  --text-muted: #486273;
-  --text-subtle: #7C919D;
-  --accent-500: #0B5E8E;
-  --accent-600: #08476B;
-  --accent-700: #063550;
-  --accent-soft: rgba(11, 94, 142, 0.12);
-  --accent-border: rgba(11, 94, 142, 0.28);
-  --accent-ring: rgba(114, 214, 193, 0.5);
+  --bg-app: #DAF1DE;
+  --bg-surface: #DAF1DE;
+  --bg-surface-elevated: #DAF1DE;
+  --border-app: transparent;
+  --border-subtle: transparent;
+  --text-main: #051F20;
+  --text-muted: #163832;
+  --text-subtle: #235347;
+  --accent-500: #235347;
+  --accent-600: #163832;
+  --accent-700: #062B26;
+  --accent-soft: rgba(35, 83, 71, 0.12);
+  --accent-border: rgba(35, 83, 71, 0.28);
+  --accent-ring: rgba(142, 182, 155, 0.5);
 }
 
 /* Light / Dark Mode CSS Custom Properties System */
 :root {
   color-scheme: light dark;
-  --bg-app: #081622;
-  --bg-surface: #0E2233;
-  --bg-surface-elevated: #152E44;
-  --border-app: #1D3F5C;
-  --border-subtle: #17344D;
-  --text-main: #F2F9FC;
-  --text-muted: #9EBDD0;
-  --text-subtle: #7C919D;
-  --bg-sidebar-navy: #081B2B;
+  --bg-app: #DAF1DE;
+  --bg-surface: #DAF1DE;
+  --bg-surface-elevated: #8EB69B;
+  --border-app: transparent;
+  --border-subtle: transparent;
+  --text-main: #051F20;
+  --text-muted: #163832;
+  --text-subtle: #235347;
+  --bg-sidebar-navy: #051F20;
 
   /* Brand Primary & Teal Accent Palette */
-  --accent-500: #0B5E8E;
-  --accent-600: #08476B;
-  --accent-700: #063550;
-  --accent-soft: rgba(114, 214, 193, 0.18);
-  --accent-border: rgba(114, 214, 193, 0.35);
-  --accent-ring: rgba(114, 214, 193, 0.45);
+  --accent-500: #235347;
+  --accent-600: #163832;
+  --accent-700: #062B26;
+  --accent-soft: rgba(35, 83, 71, 0.18);
+  --accent-border: rgba(35, 83, 71, 0.35);
+  --accent-ring: rgba(142, 182, 155, 0.45);
 }
 
 :root[data-accent="brand"], :root[data-accent="teal"] {
-  --accent-500: #0B5E8E;
-  --accent-600: #08476B;
-  --accent-700: #063550;
-  --accent-soft: rgba(11, 94, 142, 0.15);
-  --accent-border: rgba(11, 94, 142, 0.3);
-  --accent-ring: rgba(114, 214, 193, 0.5);
+  --accent-500: #235347;
+  --accent-600: #163832;
+  --accent-700: #062B26;
+  --accent-soft: rgba(35, 83, 71, 0.15);
+  --accent-border: rgba(35, 83, 71, 0.3);
+  --accent-ring: rgba(142, 182, 155, 0.5);
 }
 
 :root[data-accent="secondary"] {
-  --accent-500: #168A8A;
-  --accent-600: #127272;
-  --accent-700: #0D5454;
-  --accent-soft: rgba(22, 138, 138, 0.15);
-  --accent-border: rgba(22, 138, 138, 0.3);
-  --accent-ring: rgba(114, 214, 193, 0.5);
+  --accent-500: #163832;
+  --accent-600: #235347;
+  --accent-700: #062B26;
+  --accent-soft: rgba(22, 56, 50, 0.15);
+  --accent-border: rgba(22, 56, 50, 0.3);
+  --accent-ring: rgba(142, 182, 155, 0.5);
 }
 
 :root[data-accent="blue"] {
-  --accent-500: #0B5E8E;
-  --accent-600: #08476B;
-  --accent-700: #063550;
-  --accent-soft: rgba(11, 94, 142, 0.15);
-  --accent-border: rgba(11, 94, 142, 0.3);
-  --accent-ring: rgba(59, 143, 196, 0.4);
+  --accent-500: #235347;
+  --accent-600: #163832;
+  --accent-700: #062B26;
+  --accent-soft: rgba(35, 83, 71, 0.15);
+  --accent-border: rgba(35, 83, 71, 0.3);
+  --accent-ring: rgba(142, 182, 155, 0.4);
 }
 
 :root[data-accent="emerald"] {
-  --accent-500: #249B72;
-  --accent-600: #1E8260;
-  --accent-700: #166147;
-  --accent-soft: rgba(36, 155, 114, 0.15);
-  --accent-border: rgba(36, 155, 114, 0.3);
-  --accent-ring: rgba(36, 155, 114, 0.4);
+  --accent-500: #8EB69B;
+  --accent-600: #235347;
+  --accent-700: #163832;
+  --accent-soft: rgba(142, 182, 155, 0.15);
+  --accent-border: rgba(142, 182, 155, 0.3);
+  --accent-ring: rgba(142, 182, 155, 0.4);
 }
 
 :root[data-accent="amber"] {
-  --accent-500: #D99A2B;
-  --accent-600: #BA801E;
-  --accent-700: #936313;
-  --accent-soft: rgba(217, 154, 43, 0.15);
-  --accent-border: rgba(217, 154, 43, 0.3);
-  --accent-ring: rgba(217, 154, 43, 0.4);
+  --accent-500: #8EB69B;
+  --accent-600: #235347;
+  --accent-700: #163832;
+  --accent-soft: rgba(142, 182, 155, 0.15);
+  --accent-border: rgba(142, 182, 155, 0.3);
+  --accent-ring: rgba(142, 182, 155, 0.4);
 }
 
 html.light-mode, html.light {
   color-scheme: light;
   --font-sans: 'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --bg-app: #F2F9FC;
-  --bg-surface: #FFFFFF;
-  --bg-surface-elevated: #EAF4F9;
-  --border-app: #D9E8EF;
-  --border-subtle: #C5DCE6;
-  --text-main: #17324D;
-  --text-muted: #486273;
-  --text-subtle: #7C919D;
+  --bg-app: #DAF1DE;
+  --bg-surface: #DAF1DE;
+  --bg-surface-elevated: #8EB69B;
+  --border-app: transparent;
+  --border-subtle: transparent;
+  --text-main: #051F20;
+  --text-muted: #163832;
+  --text-subtle: #235347;
   --color-red-300: oklch(80.8% 0.114 19.571);
   --color-red-400: oklch(70.4% 0.191 22.216);
   --color-red-500: oklch(63.7% 0.237 25.331);
@@ -277,20 +365,20 @@ html.light-mode body {
 /* High Contrast Light Mode Readability Overrides */
 html.light-mode .text-white,
 html.light-mode .text-slate-100 {
-  color: #17324D !important;
+  color: #051F20 !important;
 }
 
 html.light-mode .text-slate-200,
 html.light-mode .text-slate-300 {
-  color: #214363 !important;
+  color: #062B26 !important;
 }
 
 html.light-mode .text-slate-400 {
-  color: #486273 !important;
+  color: #163832 !important;
 }
 
 html.light-mode .text-slate-500 {
-  color: #7C919D !important;
+  color: #235347 !important;
 }
 
 html.light-mode .bg-slate-950,
@@ -325,18 +413,18 @@ html.light-mode .border-slate-700,
 html.light-mode .border-slate-700\/80,
 html.light-mode .border-slate-700\/40,
 html.light-mode .border-slate-700\/50 {
-  border-color: #D9E8EF !important;
+  border-color: transparent !important;
 }
 
 html.light-mode .divide-slate-800\/60 > * + * {
-  border-color: #D9E8EF !important;
+  border-color: transparent !important;
 }
 
 html.light-mode .kpi-card,
 html.light-mode .glass-card,
 html.light-mode .glass-modal {
   background-color: #FFFFFF !important;
-  border-color: #D9E8EF !important;
+  border-color: transparent !important;
   box-shadow: 0 4px 16px -2px rgba(11, 94, 142, 0.06) !important;
 }
 
@@ -385,7 +473,7 @@ html.light-mode .glass-modal {
 
 /* Sidebar Dark Theme Container & Pure White Text Protection in Light Mode */
 html.light-mode aside {
-  background-color: #0c1628 !important;
+  background-color: #051F20 !important;
 }
 
 html.light-mode aside .text-white,
@@ -393,36 +481,36 @@ html.light-mode aside .text-slate-100,
 html.light-mode aside .text-slate-200,
 html.light-mode aside .text-slate-300,
 html.light-mode aside .text-slate-400 {
-  color: #ffffff !important;
+  color: #DAF1DE !important;
 }
 
 html.light-mode aside .text-white\/90 {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(218, 241, 222, 0.9) !important;
 }
 
 html.light-mode aside .text-white\/80 {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(218, 241, 222, 0.8) !important;
 }
 
 html.light-mode aside .text-white\/70 {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(218, 241, 222, 0.7) !important;
 }
 
 html.light-mode aside .bg-slate-900\/80 {
-  background-color: rgba(15, 23, 42, 0.8) !important;
+  background-color: rgba(22, 56, 50, 0.8) !important;
 }
 
 html.light-mode aside .border-slate-800,
 html.light-mode aside .border-slate-800\/80,
 html.light-mode aside .border-slate-800\/60 {
-  border-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: transparent !important;
 }
 
 
 
 .kpi-card {
   background-color: var(--bg-surface);
-  border: 1px solid var(--border-app);
+  border: 1px solid transparent;
   border-radius: 14px;
   padding: 20px 22px;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -434,7 +522,7 @@ html.light-mode aside .border-slate-800\/60 {
 
 .status-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
   padding: 3px 9px;
   border-radius: 100px;
@@ -443,7 +531,7 @@ html.light-mode aside .border-slate-800\/60 {
 
 .glass-card {
   background-color: var(--bg-surface);
-  border: 1px solid var(--border-app);
+  border: 1px solid transparent;
   backdrop-filter: blur(12px);
   border-radius: 1rem;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
@@ -451,7 +539,7 @@ html.light-mode aside .border-slate-800\/60 {
 
 .glass-modal {
   background-color: var(--bg-surface);
-  border: 1px solid var(--border-app);
+  border: 1px solid transparent;
   backdrop-filter: blur(16px);
   border-radius: 1rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
@@ -459,7 +547,7 @@ html.light-mode aside .border-slate-800\/60 {
 
 .glass-panel {
   background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid transparent;
   backdrop-filter: blur(8px);
   border-radius: 0.75rem;
 }
@@ -526,12 +614,12 @@ html.dark ::-webkit-scrollbar-thumb {
 }
 
 .pos-cart-scrollbar::-webkit-scrollbar-thumb {
-  background: #3b82f6 !important;
+  background: #235347 !important;
   border-radius: 8px;
 }
 
 .pos-cart-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #2563eb !important;
+  background: #163832 !important;
 }
 
 /* Custom Smooth Scrollbar for Workstation & Queue Containers */
@@ -541,25 +629,25 @@ html.dark ::-webkit-scrollbar-thumb {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.2);
+  background: rgba(5, 31, 32, 0.2);
   border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #3b82f6;
+  background: #235347;
   border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #163832;
 }
 
 html.light-mode .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #DAF1DE;
 }
 
 html.light-mode .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: #8EB69B;
 }
 
 /* Print Media Styles for Thermal Printers & Sticker Label Printing */

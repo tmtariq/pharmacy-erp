@@ -28,6 +28,10 @@ import EmployeeManagement from './pages/EmployeeManagement';
 import SystemSettings from './pages/SystemSettings';
 import LandingPage from './pages/LandingPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import PendingApprovalsPage from './pages/PendingApprovalsPage';
+import CompanyDetailCenter from './pages/CompanyDetailCenter';
+import SaasAdminLogin from './pages/SaasAdminLogin';
+import CheckoutPage from './pages/CheckoutPage';
 import NotFound from './pages/NotFound';
 import LegalPages from './pages/LegalPages';
 
@@ -35,22 +39,28 @@ function App() {
   return (
     <ToastProvider>
       <Routes>
+        {/* Dedicated SaaS Platform Admin Authentication */}
+        <Route path="/saas-admin/login" element={<SaasAdminLogin />} />
+        <Route path="/saas-admin" element={<Navigate to="/saas-admin/portal" replace />} />
+        <Route path="/saas-admin/portal" element={<SuperAdminDashboard />} />
+        <Route path="/saas-admin/approvals" element={<PendingApprovalsPage />} />
+        <Route path="/saas-admin/company/:pharmacyId" element={<CompanyDetailCenter />} />
+
         {/* ERP SaaS Homepage & Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/store" element={<CustomerStorefront />} />
         <Route path="/legal" element={<LegalPages />} />
         <Route path="/login" element={<Login />} />
         <Route path="/app/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register-tenant" element={<RegisterTenant />} />
 
         {/* Protected Operations Layout Shell */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<DashboardRouter />} />
-            <Route path="/superadmin" element={<SuperAdminDashboard />} />
             <Route path="/pos" element={<POSBilling />} />
             <Route path="/prescriptions" element={<PrescriptionManagement />} />
             <Route path="/inventory" element={<Inventory />} />

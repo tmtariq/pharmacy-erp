@@ -145,15 +145,15 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
         />
       )}
 
-      {/* Sidebar Content (Dark Navy #0c1628 background, Collapsible Icon-Only Mode) */}
+      {/* Sidebar Content (Dark Deepest Teal #051F20 background, Collapsible Icon-Only Mode) */}
       <aside
-        className={`bg-[#0c1628] border-r border-slate-800/80 flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out z-30 fixed inset-y-0 left-0 lg:static lg:z-auto lg:h-full lg:translate-x-0 ${
+        className={`bg-[#051F20] border-r border-transparent flex flex-col justify-between shrink-0 transition-all duration-300 ease-in-out z-30 fixed inset-y-0 left-0 lg:static lg:z-auto lg:h-full lg:translate-x-0 ${
           isCollapsed ? 'lg:w-20' : 'lg:w-72'
         } ${isMobileOpen ? 'w-72 translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden">
           {/* Mobile Drawer Header */}
-          <div className="p-4 border-b border-slate-800/80 flex items-center justify-between lg:hidden shrink-0">
+          <div className="p-4 border-b border-transparent flex items-center justify-between lg:hidden shrink-0">
             <div className="flex items-center space-x-2.5 min-w-0">
               <div className="p-1.5 rounded-lg bg-accent/20 border border-accent/30 text-accent shrink-0">
                 <Building2 className="w-5 h-5" />
@@ -164,16 +164,16 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
             </div>
             <button
               onClick={onCloseMobileMenu}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer shrink-0 ml-2"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#163832] cursor-pointer shrink-0 ml-2"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-
+ 
           <div className="p-3 space-y-1 flex-1">
             {!isCollapsed && (
-              <div className="flex items-center space-x-2.5 px-3 py-2.5 mb-2 border-b border-slate-800/60">
+              <div className="flex items-center space-x-2.5 px-3 py-2.5 mb-2 border-b border-transparent">
                 <div className="p-1.5 rounded-lg bg-accent/20 border border-accent/30 text-accent shrink-0">
                   <Building2 className="w-5 h-5" />
                 </div>
@@ -185,7 +185,7 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
             {visibleSections.map((section) => (
               <div key={section.label} className="mb-4 last:mb-0">
                 {!isCollapsed && (
-                  <div className="px-3 py-1.5 mt-3 first:mt-0 text-[10px] font-bold uppercase tracking-widest text-white/40 font-mono">
+                  <div className="px-3 py-1.5 mt-3 first:mt-0 text-[10px] font-bold uppercase tracking-widest text-[#8EB69B] font-mono">
                     {section.label}
                   </div>
                 )}
@@ -200,10 +200,10 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
                       className={({ isActive }) =>
                         `flex items-center ${isCollapsed ? 'justify-center px-0 py-2.5' : 'justify-between px-3.5 py-2.5'} rounded-xl text-sm font-medium transition-all ${
                           isActive
-                            ? 'bg-[#0B5E8E] text-white shadow-lg shadow-[#0B5E8E]/30 font-semibold tracking-tight'
+                            ? 'bg-[#235347] text-[#DAF1DE] shadow-lg shadow-[#235347]/30 font-semibold tracking-tight'
                             : item.highlight
-                            ? 'text-[#72D6C1] hover:bg-[#0B5E8E]/20'
-                            : 'text-white/90 hover:bg-slate-800/70 hover:text-white'
+                            ? 'text-[#8EB69B] hover:bg-[#235347]/20'
+                            : 'text-[#DAF1DE]/90 hover:bg-[#163832] hover:text-[#DAF1DE]'
                         }`
                       }
                     >
@@ -224,20 +224,20 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
           </div>
 
           {/* Desktop Sidebar Collapse Toggle + Subscription Card */}
-          <div className="p-3 border-t border-slate-800/80 shrink-0 space-y-2">
+          <div className="p-3 border-t border-transparent shrink-0 space-y-2">
             {!isCollapsed ? (
               <NavLink
                 to="/settings/subscription"
                 onClick={handleNavClick}
-                className="bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-xl p-3 text-xs text-white/90 block transition-all"
+                className="bg-[#163832] hover:bg-[#235347] border border-transparent rounded-xl p-3 text-xs text-[#DAF1DE] block transition-all"
               >
                 <div>
-                  <div className="font-bold text-white flex items-center gap-1.5 mb-0.5 font-display">
-                    <CreditCard className="w-4 h-4 text-accent" />
+                  <div className="font-bold text-[#DAF1DE] flex items-center gap-1.5 mb-0.5 font-display">
+                    <CreditCard className="w-4 h-4 text-[#8EB69B]" />
                     {currentPlan} Plan
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#8EB69B] font-medium">
+                    <span className="w-2 h-2 rounded-full bg-[#8EB69B] animate-pulse"></span>
                     Active Subscription
                   </div>
                 </div>
@@ -246,7 +246,7 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
               <NavLink
                 to="/settings/subscription"
                 title={`${currentPlan} Plan - Active`}
-                className="flex items-center justify-center p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-accent hover:bg-slate-800"
+                className="flex items-center justify-center p-2.5 rounded-xl bg-[#163832] border border-transparent text-[#8EB69B] hover:bg-[#235347]"
               >
                 <CreditCard className="w-5 h-5" />
               </NavLink>
@@ -255,7 +255,7 @@ const Sidebar = ({ isMobileOpen = false, onCloseMobileMenu }) => {
             {/* Desktop Expand/Collapse Sidebar Button */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex items-center justify-center w-full py-2 rounded-xl text-white/80 hover:text-white hover:bg-slate-800/60 border border-slate-800/60 cursor-pointer transition-all text-xs font-medium gap-2"
+              className="hidden lg:flex items-center justify-center w-full py-2 rounded-xl text-[#DAF1DE]/80 hover:text-[#DAF1DE] hover:bg-[#163832] border border-transparent cursor-pointer transition-all text-xs font-medium gap-2"
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {isCollapsed ? (

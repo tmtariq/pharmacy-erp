@@ -24,6 +24,8 @@ import aiRoutes from './routes/aiRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import financeRoutes from './routes/financeRoutes.js';
+import saasAdminRoutes from './routes/saasAdminRoutes.js';
+import billingRoutes from './routes/billingRoutes.js';
 
 dotenv.config();
 
@@ -84,6 +86,8 @@ apiRouter.use('/ai', aiRoutes);
 apiRouter.use('/employees', employeeRoutes);
 apiRouter.use('/settings', settingsRoutes);
 apiRouter.use('/finance', financeRoutes);
+apiRouter.use('/saas-admin', saasAdminRoutes);
+apiRouter.use('/billing', billingRoutes);
 apiRouter.use('/reorder-duplicates', reorderDuplicateRoutes);
 
 app.use('/api/v1', apiRouter);

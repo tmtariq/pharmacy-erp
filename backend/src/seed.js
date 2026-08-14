@@ -10,6 +10,7 @@ import Batch from './models/Batch.js';
 import Customer from './models/Customer.js';
 import Sale from './models/Sale.js';
 import Prescription from './models/Prescription.js';
+import SuperAdmin from './models/SuperAdmin.js';
 import connectDB from './config/db.js';
 
 dotenv.config({ path: './backend/.env' });
@@ -24,10 +25,12 @@ const seedDatabase = async () => {
     try { await Category.collection.dropIndexes(); } catch (e) {}
     try { await Medicine.collection.dropIndexes(); } catch (e) {}
     try { await User.collection.dropIndexes(); } catch (e) {}
+    try { await SuperAdmin.collection.dropIndexes(); } catch (e) {}
 
     await Pharmacy.deleteMany({});
     await Branch.deleteMany({});
     await User.deleteMany({});
+    await SuperAdmin.deleteMany({});
     await Category.deleteMany({});
     await Supplier.deleteMany({});
     await Medicine.deleteMany({});
@@ -47,7 +50,9 @@ const seedDatabase = async () => {
       phone: '+1 800 555 0199',
       address: '100 Medical Blvd, Healthcare City',
       plan: 'Enterprise',
-      subscriptionStatus: 'active'
+      subscriptionStatus: 'active',
+      companyStatus: 'Active',
+      isActive: true
     });
 
     const branch1_1 = await Branch.create({
@@ -77,7 +82,9 @@ const seedDatabase = async () => {
       phone: '+1 800 555 0300',
       address: '77 Wellness Ave, Careville',
       plan: 'Professional',
-      subscriptionStatus: 'active'
+      subscriptionStatus: 'active',
+      companyStatus: 'Active',
+      isActive: true
     });
 
     const branch2_1 = await Branch.create({
@@ -91,10 +98,10 @@ const seedDatabase = async () => {
 
     console.log('👑 Creating Pharmacy Users...');
 
-    // 0. System Super Admin (SaaS Platform Controller)
+    // 0. System Super Admin (SaaS Platform Controller) - Generic Gmail Account
     const superAdmin = await User.create({
       name: 'System Super Admin',
-      email: 'superadmin@pharmacy.com',
+      email: 'saasadmin@gmail.com',
       password: 'SuperAdminPass@2026!',
       role: 'SuperAdmin',
       pharmacy: pharmacy1._id,
@@ -103,10 +110,20 @@ const seedDatabase = async () => {
       phone: '+1 800 555 9999'
     });
 
-    // 1. Company Owner (Enterprise Control)
+    // 0.1 Dedicated SuperAdmin Platform Operator (for /saas-admin login)
+    await SuperAdmin.create({
+      name: 'SaaS Platform Operator',
+      email: 'saasadmin@gmail.com',
+      password: 'SuperAdminPass@2026!',
+      role: 'SuperAdmin',
+      permissions: ['ALL_PERMISSIONS'],
+      status: 'active'
+    });
+
+    // 1. Company Owner (Enterprise Control) - Generic Gmail Account
     const owner1 = await User.create({
       name: 'Sarah Jenkins (Company Owner)',
-      email: 'owner@pharmacy.com',
+      email: 'companyowner@gmail.com',
       password: 'OwnerPass@2026!',
       role: 'Owner',
       pharmacy: pharmacy1._id,
@@ -118,7 +135,7 @@ const seedDatabase = async () => {
     // 2. Branch Manager (Main HQ Branch)
     const branchManager1 = await User.create({
       name: 'David Ross (HQ Branch Manager)',
-      email: 'manager.hq@pharmacy.com',
+      email: 'branchmanager@gmail.com',
       password: 'ManagerPass@2026!',
       role: 'Branch Manager',
       pharmacy: pharmacy1._id,
@@ -130,7 +147,7 @@ const seedDatabase = async () => {
     // 3. Branch Manager (Downtown Branch Outlet)
     const branchManager2 = await User.create({
       name: 'Elena Rostova (Downtown Branch Manager)',
-      email: 'manager.downtown@pharmacy.com',
+      email: 'manager.downtown@gmail.com',
       password: 'ManagerPass@2026!',
       role: 'Branch Manager',
       pharmacy: pharmacy1._id,
@@ -142,7 +159,7 @@ const seedDatabase = async () => {
     // 4. Clinical Pharmacist
     const pharmacist1 = await User.create({
       name: 'Dr. Michael Chang (Pharmacist)',
-      email: 'pharmacist@pharmacy.com',
+      email: 'pharmacist@gmail.com',
       password: 'PharmPass@2026!',
       role: 'Pharmacist',
       pharmacy: pharmacy1._id,
@@ -154,7 +171,7 @@ const seedDatabase = async () => {
     // 5. Cashier (POS Terminal)
     const cashier1 = await User.create({
       name: 'Alex Rivera (POS Cashier)',
-      email: 'cashier@pharmacy.com',
+      email: 'cashier@gmail.com',
       password: 'CashierPass@2026!',
       role: 'Cashier',
       pharmacy: pharmacy1._id,
@@ -163,12 +180,12 @@ const seedDatabase = async () => {
       phone: '+1 555 0113'
     });
 
-    // 6. Inventory Staff
+    // 6. Inventory Staff (Inventory Manager role)
     const inventory1 = await User.create({
       name: 'Marcus Vance (Inventory Manager)',
-      email: 'inventory@pharmacy.com',
+      email: 'inventory@gmail.com',
       password: 'InventoryPass@2026!',
-      role: 'Inventory Staff',
+      role: 'Inventory Manager',
       pharmacy: pharmacy1._id,
       branch: branch1_1._id,
       assignedBranches: [branch1_1._id],
@@ -178,7 +195,7 @@ const seedDatabase = async () => {
     // 7. Delivery Staff
     const delivery1 = await User.create({
       name: 'Tariq Mahmood (Delivery Driver)',
-      email: 'delivery@pharmacy.com',
+      email: 'delivery@gmail.com',
       password: 'DeliveryPass@2026!',
       role: 'Delivery Staff',
       pharmacy: pharmacy1._id,
@@ -190,7 +207,7 @@ const seedDatabase = async () => {
     // 8. Customer Account
     const customerUser1 = await User.create({
       name: 'John Customer (Patient Portal)',
-      email: 'customer@pharmacy.com',
+      email: 'customer@gmail.com',
       password: 'CustomerPass@2026!',
       role: 'Customer',
       pharmacy: pharmacy1._id,

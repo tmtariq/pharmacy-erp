@@ -12,10 +12,14 @@ const userSchema = new mongoose.Schema(
       enum: [
         'SuperAdmin',
         'Owner',
+        'Company Owner',
         'Branch Manager',
         'Pharmacist',
-        'Cashier',
+        'Inventory Manager',
         'Inventory Staff',
+        'Sales Staff',
+        'Cashier',
+        'Accountant',
         'Delivery Staff',
         'Customer'
       ],
@@ -27,6 +31,7 @@ const userSchema = new mongoose.Schema(
     assignedBranches: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Branch' }],
     phone: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+    lastLogin: { type: Date, default: null },
 
     // Security & Auth Enhancements
     isEmailVerified: { type: Boolean, default: true },

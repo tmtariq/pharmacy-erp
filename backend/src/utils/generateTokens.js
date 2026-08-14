@@ -1,8 +1,12 @@
 import jwt from 'jsonwebtoken';
 
 export const generateTokens = (res, userId) => {
-  const accessSecret = process.env.JWT_ACCESS_SECRET || 'super_secret_pharmacy_erp_access_key_2026';
-  const refreshSecret = process.env.JWT_REFRESH_SECRET || 'super_secret_pharmacy_erp_refresh_key_2026';
+  const accessSecret = process.env.JWT_ACCESS_SECRET;
+  const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+  if (!accessSecret || !refreshSecret) {
+    throw new Error('FATAL SECURITY EXCEPTION: JWT Access and/or Refresh secret environment variables are not defined.');
+  }
 
   const accessToken = jwt.sign({ id: userId }, accessSecret, {
     expiresIn: '15m'

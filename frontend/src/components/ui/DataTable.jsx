@@ -80,68 +80,70 @@ export const DataTable = ({
         ) : (
           <>
             {/* Desktop Table View */}
-            <table className="w-full text-left border-collapse hidden md:table">
-              <thead className="sticky top-0 z-10 bg-slate-900 dark:bg-slate-900 light:bg-slate-100 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 light:text-slate-600">
-                <tr>
-                  {columns.map((col, idx) => (
-                    <th key={col.key || col.accessor || idx} className={`p-4 ${col.className || ''}`}>
-                      {col.header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 dark:divide-slate-800/60 light:divide-slate-200 text-sm">
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((row, rowIndex) => {
-                    const expandedContent = renderExpandedRow ? renderExpandedRow(row, rowIndex) : null;
-                    return (
-                      <React.Fragment key={row._id || row.id || rowIndex}>
-                        <tr
-                          onClick={() => onRowClick && onRowClick(row)}
-                          className={`data-row transition-colors duration-150 ${
-                            onRowClick ? 'cursor-pointer' : ''
-                          } hover:bg-slate-800/50 dark:hover:bg-slate-800/50 light:hover:bg-slate-100 ${
-                            rowIndex % 2 === 1
-                              ? 'bg-slate-950/20 dark:bg-slate-950/20 light:bg-slate-50/50'
-                              : ''
-                          }`}
-                        >
-                          {columns.map((col, colIndex) => {
-                            const value = col.accessor ? row[col.accessor] : null;
-                            return (
-                              <td
-                                key={col.key || col.accessor || colIndex}
-                                className={`p-4 text-slate-200 dark:text-slate-200 light:text-slate-800 ${
-                                  col.className || ''
-                                }`}
-                              >
-                                {col.render ? col.render(row, rowIndex) : value}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                        {expandedContent && (
-                          <tr className="bg-slate-950/80">
-                            <td colSpan={columns.length || 1} className="p-0 border-l-4 border-blue-500">
-                              {expandedContent}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })
-                ) : (
+            <div className="w-full overflow-x-auto block">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead className="sticky top-0 z-10 bg-slate-900 dark:bg-slate-900 light:bg-slate-100 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 light:text-slate-600">
                   <tr>
-                    <td colSpan={columns.length || 1} className="p-8 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">
-                        <Inbox className="w-8 h-8 text-slate-500" />
-                        <p className="text-sm font-medium">{emptyMessage}</p>
-                      </div>
-                    </td>
+                    {columns.map((col, idx) => (
+                      <th key={col.key || col.accessor || idx} className={`p-4 whitespace-nowrap ${col.className || ''}`}>
+                        {col.header}
+                      </th>
+                    ))}
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 dark:divide-slate-800/60 light:divide-slate-200 text-sm">
+                  {paginatedData.length > 0 ? (
+                    paginatedData.map((row, rowIndex) => {
+                      const expandedContent = renderExpandedRow ? renderExpandedRow(row, rowIndex) : null;
+                      return (
+                        <React.Fragment key={row._id || row.id || rowIndex}>
+                          <tr
+                            onClick={() => onRowClick && onRowClick(row)}
+                            className={`data-row transition-colors duration-150 ${
+                              onRowClick ? 'cursor-pointer' : ''
+                            } hover:bg-slate-800/50 dark:hover:bg-slate-800/50 light:hover:bg-slate-100 ${
+                              rowIndex % 2 === 1
+                                ? 'bg-slate-950/20 dark:bg-slate-950/20 light:bg-slate-50/50'
+                                : ''
+                            }`}
+                          >
+                            {columns.map((col, colIndex) => {
+                              const value = col.accessor ? row[col.accessor] : null;
+                              return (
+                                <td
+                                  key={col.key || col.accessor || colIndex}
+                                  className={`p-4 text-slate-200 dark:text-slate-200 light:text-slate-800 ${
+                                    col.className || ''
+                                  }`}
+                                >
+                                  {col.render ? col.render(row, rowIndex) : value}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                          {expandedContent && (
+                            <tr className="bg-slate-950/80">
+                              <td colSpan={columns.length || 1} className="p-0 border-l-4 border-blue-500">
+                                {expandedContent}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={columns.length || 1} className="p-8 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-2 text-slate-400">
+                          <Inbox className="w-8 h-8 text-slate-500" />
+                          <p className="text-sm font-medium">{emptyMessage}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {/* Mobile Responsive Cards Fallback */}
             <div className="md:hidden divide-y divide-slate-800 dark:divide-slate-800 light:divide-slate-200">
