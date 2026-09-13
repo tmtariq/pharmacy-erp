@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
     await fetchBranches(loggedUser);
     if (loggedUser?.role === 'SuperAdmin') {
-      navigate('/superadmin');
+      navigate('/saas-admin/portal');
     } else {
       navigate('/dashboard');
     }

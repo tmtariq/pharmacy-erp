@@ -16,6 +16,7 @@ import {
 } from '../controllers/prescriptionController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { attachTenant } from '../middlewares/tenantMiddleware.js';
+import { authorizeRoles } from '../middlewares/rbacMiddleware.js';
 
 const router = express.Router();
 
@@ -32,9 +33,9 @@ router.get('/:id', getPrescriptionById);
 router.post('/upload', uploadPrescription);
 router.post('/batch-upload', batchUploadPrescriptions);
 router.post('/:id/process-ocr', processOcrPreprocessing);
-router.put('/:id/review', reviewPrescription);
-router.post('/:id/pos-convert', convertPrescriptionToPosSale);
-router.put('/:id/approve', approvePrescription);
+router.put('/:id/review', authorizeRoles('Pharmacist', 'Owner', 'Admin'), reviewPrescription);
+router.post('/:id/pos-convert', authorizeRoles('Pharmacist', 'Owner', 'Admin', 'Cashier'), convertPrescriptionToPosSale);
+router.put('/:id/approve', authorizeRoles('Pharmacist', 'Owner', 'Admin'), approvePrescription);
 
 export default router;
 

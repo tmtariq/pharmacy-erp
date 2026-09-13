@@ -176,22 +176,30 @@ export const updateMedicine = async (req, res) => {
 
 export const deleteMedicine = async (req, res) => {
   try {
-    const medicine = await Medicine.findOneAndDelete({ _id: req.params.id, pharmacy: req.pharmacyId });
+    const medicine = await Medicine.findOneAndUpdate(
+      { _id: req.params.id, pharmacy: req.pharmacyId },
+      { $set: { status: 'inactive' } },
+      { new: true }
+    );
     if (!medicine) return res.status(404).json({ message: 'Medicine not found' });
 
-    await Batch.deleteMany({ medicine: req.params.id, pharmacy: req.pharmacyId });
+    // Deactivate active batches rather than hard-deleting to preserve historical audit traceability
+    await Batch.updateMany(
+      { medicine: req.params.id, pharmacy: req.pharmacyId, status: 'active' },
+      { $set: { status: 'exhausted' } }
+    );
 
     await AuditLog.create({
       pharmacy: req.pharmacyId,
       branch: req.branchId,
       user: req.userFull._id,
       userName: req.userFull.name,
-      action: 'MEDICINE_DELETED',
+      action: 'MEDICINE_ARCHIVED',
       module: 'Medicine Management',
-      details: `Deleted medicine "${medicine.name}" (SKU: ${medicine.sku})`
+      details: `Archived medicine "${medicine.name}" (SKU: ${medicine.sku}) to maintain GxP audit trail`
     });
 
-    res.json({ message: 'Medicine deleted successfully' });
+    res.json({ message: 'Medicine archived successfully to maintain clinical audit compliance.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

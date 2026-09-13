@@ -6,6 +6,7 @@ import Branch from '../models/Branch.js';
 import AuditLog from '../models/AuditLog.js';
 import { generateTokens } from '../utils/generateTokens.js';
 import LoginHistory from '../models/LoginHistory.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // Helper: record login event
 const recordLogin = async (userId, pharmacyId, email, req, status, failureReason = '') => {
@@ -214,11 +215,19 @@ export const login = async (req, res) => {
         user.twoFactorCodeExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
         await user.save();
 
-        console.log(`🔑 [SECURITY 2FA CODE for ${user.email}]: ${code}`);
+        try {
+          await sendEmail({
+            email: user.email,
+            subject: 'Your 2FA Verification Code',
+            message: `Your login verification code is: ${code}. This code will expire in 10 minutes.`
+          });
+        } catch (mailErr) {
+          console.error('Failed to dispatch 2FA email:', mailErr.message);
+        }
 
         return res.status(202).json({
           status: '2fa_required',
-          message: '2FA code sent. Please provide twoFactorCode to complete login.',
+          message: '2FA code sent to your email. Please provide twoFactorCode to complete login.',
           email: user.email
         });
       }
@@ -281,20 +290,38 @@ export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      return res.status(200).json({ message: 'If an account exists, a password reset token has been sent.' });
+      // Return generic message to prevent user enumeration
+      return res.status(200).json({
+        status: 'success',
+        message: 'If an account exists with that email, password reset instructions have been sent.'
+      });
     }
 
     const resetToken = user.getResetPasswordToken();
     await user.save();
 
-    console.log(`🔐 [RESET PASSWORD TOKEN for ${user.email}]: ${resetToken}`);
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password?token=${resetToken}`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Pharmacy ERP - Password Reset Request',
+        message: `You requested a password reset for your Pharmacy ERP account. Please click the link below to set a new password:\n\n${resetUrl}\n\nThis link is valid for 30 minutes. If you did not request this, please ignore this email.`
+      });
+    } catch (mailErr) {
+      console.error('Failed to send reset password email:', mailErr.message);
+    }
 
     res.status(200).json({
       status: 'success',
-      message: 'Password reset token generated.',
-      resetToken
+      message: 'If an account exists with that email, password reset instructions have been sent.'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

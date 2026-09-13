@@ -12,7 +12,7 @@ const DashboardRouter = () => {
 
   // SuperAdmin goes to their dedicated dashboard
   if (role === 'SuperAdmin') {
-    return <Navigate to="/superadmin" replace />;
+    return <Navigate to="/saas-admin/portal" replace />;
   }
 
   // Cashier gets dedicated cash register & payment counter dashboard

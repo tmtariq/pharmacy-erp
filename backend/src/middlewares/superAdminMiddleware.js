@@ -1,7 +1,16 @@
 import jwt from 'jsonwebtoken';
 import SuperAdmin from '../models/SuperAdmin.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pharmacy-erp-jwt-secret-key-2026';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL SECURITY EXCEPTION: JWT_SECRET environment variable is not defined.');
+    }
+    return 'dev-superadmin-fallback-secret-2026';
+  }
+  return secret;
+};
 
 /**
  * Strict Gatekeeper: Verifies that the requester is a real SaaS SuperAdmin
@@ -21,7 +30,7 @@ export const requireSuperAdmin = async (req, res, next) => {
       return res.status(401).json({ message: 'Access denied: SuperAdmin authentication required' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     const platformRoles = ['Super Admin', 'Finance Admin', 'Support Admin', 'Operations Admin', 'SuperAdmin'];
     if (!platformRoles.includes(decoded.role) || !decoded.isPlatformAdmin) {

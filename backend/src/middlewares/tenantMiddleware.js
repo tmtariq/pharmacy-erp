@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Branch from '../models/Branch.js';
 
 export const attachTenant = async (req, res, next) => {
   try {
@@ -27,9 +28,17 @@ export const attachTenant = async (req, res, next) => {
     const headerBranchId = req.headers['x-branch-id'];
     let activeBranchId = user.branch ? (user.branch._id || user.branch).toString() : null;
 
-    const isOwnerOrSuperAdmin = ['SuperAdmin', 'Owner'].includes(user.role);
+    const isOwnerOrSuperAdmin = ['SuperAdmin', 'Owner', 'Company Owner'].includes(user.role);
 
     if (headerBranchId) {
+      // Validate that the requested branch actually belongs to this pharmacy organization
+      const branchDoc = await Branch.findOne({ _id: headerBranchId, pharmacy: pharmacy._id });
+      if (!branchDoc) {
+        return res.status(403).json({
+          message: 'Access denied: The requested branch does not exist or does not belong to your pharmacy organization.'
+        });
+      }
+
       const isUserAssignedBranch =
         (user.branch && (user.branch._id || user.branch).toString() === headerBranchId) ||
         (user.assignedBranches && user.assignedBranches.some(b => (b._id || b).toString() === headerBranchId));

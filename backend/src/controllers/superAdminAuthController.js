@@ -2,8 +2,18 @@ import jwt from 'jsonwebtoken';
 import SuperAdmin from '../models/SuperAdmin.js';
 import AuditLog from '../models/AuditLog.js';
 import crypto from 'crypto';
+import sendEmail from '../utils/sendEmail.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pharmacy-erp-jwt-secret-key-2026';
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL SECURITY EXCEPTION: JWT_SECRET environment variable is not defined.');
+    }
+    return 'dev-superadmin-fallback-secret-2026';
+  }
+  return secret;
+};
 
 // Dedicated SuperAdmin Login
 export const superAdminLogin = async (req, res) => {
@@ -62,11 +72,19 @@ export const superAdminLogin = async (req, res) => {
         admin.twoFactorCodeExpire = new Date(Date.now() + 10 * 60 * 1000);
         await admin.save();
 
-        console.log(`🔐 [SUPERADMIN 2FA CODE for ${admin.email}]: ${code}`);
+        try {
+          await sendEmail({
+            email: admin.email,
+            subject: 'SuperAdmin 2FA Security Code',
+            message: `Your administrative 2FA verification code is: ${code}. This code will expire in 10 minutes.`
+          });
+        } catch (mailErr) {
+          console.error('Failed to send SuperAdmin 2FA email:', mailErr.message);
+        }
 
         return res.status(202).json({
           status: '2fa_required',
-          message: '2FA code generated. Provide twoFactorCode to complete login.',
+          message: '2FA security code generated and sent to admin email.',
           email: admin.email
         });
       }
@@ -90,7 +108,7 @@ export const superAdminLogin = async (req, res) => {
     // 6. Generate Dedicated SuperAdmin JWT
     const token = jwt.sign(
       { id: admin._id, email: admin.email, role: 'SuperAdmin', isPlatformAdmin: true },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: '12h' }
     );
 

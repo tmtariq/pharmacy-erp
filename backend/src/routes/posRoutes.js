@@ -26,8 +26,7 @@ router.get('/register/current', getCurrentRegister);
 
 // 2-Step Manager Approved Refund Workflow
 router.post('/refunds/request', requestRefund);
-router.post('/refunds/:id/approve', authorizeRoles('Owner', 'Admin', 'Branch Manager'), approveRefund);
-router.post('/refunds/:id/process', processRefund);
+router.post('/refunds/:id/process', authorizeRoles('Owner', 'Admin', 'Branch Manager'), processRefund);
 router.get('/refunds', getRefunds);
 
 export default router;

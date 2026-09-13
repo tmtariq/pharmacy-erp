@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import Sale from '../models/Sale.js';
 import Batch from '../models/Batch.js';
 import Medicine from '../models/Medicine.js';
@@ -12,6 +13,8 @@ export const processSale = async (req, res) => {
     prescriptionDocumentUrl, items, discountAmount, taxAmount, paymentMethod,
     redeemLoyaltyPoints
   } = req.body;
+
+  const appliedDeductions = [];
 
   try {
     const pharmacyId = req.pharmacyId;
@@ -54,20 +57,37 @@ export const processSale = async (req, res) => {
       const totalAvailable = activeBatches.reduce((acc, b) => acc + b.quantity, 0);
       if (totalAvailable < cartItem.quantity) {
         const med = await Medicine.findById(cartItem.medicineId);
-        return res.status(400).json({
-          message: `Sale locked: Insufficient unexpired stock for "${med?.name || 'Item'}". Requested: ${cartItem.quantity}, Available: ${totalAvailable}`
-        });
+        throw new Error(`Insufficient unexpired stock for "${med?.name || 'Item'}". Requested: ${cartItem.quantity}, Available: ${totalAvailable}`);
       }
 
       for (const batch of activeBatches) {
         if (remainingQtyToDeduct <= 0) break;
 
         const deductQty = Math.min(batch.quantity, remainingQtyToDeduct);
-        batch.quantity -= deductQty;
-        if (batch.quantity === 0) {
-          batch.status = 'exhausted';
+
+        // Atomic conditional decrement to prevent race conditions
+        const updatedBatch = await Batch.findOneAndUpdate(
+          {
+            _id: batch._id,
+            pharmacy: pharmacyId,
+            branch: branchId,
+            quantity: { $gte: deductQty }
+          },
+          {
+            $inc: { quantity: -deductQty }
+          },
+          { new: true }
+        );
+
+        if (!updatedBatch) {
+          throw new Error(`Concurrent stock contention for batch ${batch.batchNumber}. Please refresh and retry checkout.`);
         }
-        await batch.save();
+
+        appliedDeductions.push({ batchId: batch._id, quantity: deductQty });
+
+        if (updatedBatch.quantity === 0) {
+          await Batch.updateOne({ _id: batch._id }, { $set: { status: 'exhausted' } });
+        }
 
         const itemSubtotal = deductQty * cartItem.unitPrice;
         calculatedSubtotal += itemSubtotal;
@@ -114,9 +134,10 @@ export const processSale = async (req, res) => {
       await customer.save();
     }
 
+    // High-Entropy Collision-Resistant Invoice Number
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const invoiceNumber = `INV-${dateStr}-${randomSuffix}`;
+    const randomEntropy = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const invoiceNumber = `INV-${dateStr}-${randomEntropy}`;
 
     const qrPayload = JSON.stringify({
       inv: invoiceNumber,
@@ -163,7 +184,18 @@ export const processSale = async (req, res) => {
       sale: newSale
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // Rollback any batches decremented before failure
+    for (const deduction of appliedDeductions) {
+      try {
+        await Batch.updateOne(
+          { _id: deduction.batchId },
+          { $inc: { quantity: deduction.quantity }, $set: { status: 'active' } }
+        );
+      } catch (rollbackErr) {
+        console.error(`Rollback failure on batch ${deduction.batchId}:`, rollbackErr.message);
+      }
+    }
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -399,12 +431,44 @@ export const processRefund = async (req, res) => {
       return res.status(400).json({ message: 'Only Manager-approved refunds can be processed' });
     }
 
+    const sale = await Sale.findOne({ _id: refund.sale, pharmacy: req.pharmacyId });
+    if (!sale) return res.status(404).json({ message: 'Associated sale record not found' });
+
+    // 1. Restore Inventory to Batches
+    const itemsToRestore = (refund.items && refund.items.length > 0) ? refund.items : sale.items;
+    for (const item of itemsToRestore) {
+      if (item.batch && item.quantity > 0) {
+        await Batch.findByIdAndUpdate(item.batch, {
+          $inc: { quantity: item.quantity },
+          $set: { status: 'active' }
+        });
+      }
+    }
+
+    // 2. Adjust Customer Loyalty Points & Credit Balance
+    if (sale.customer) {
+      const customer = await Customer.findById(sale.customer);
+      if (customer) {
+        if (sale.loyaltyPointsEarned > 0) {
+          customer.loyaltyPoints = Math.max(0, customer.loyaltyPoints - sale.loyaltyPointsEarned);
+        }
+        if (sale.loyaltyPointsRedeemed > 0) {
+          customer.loyaltyPoints += sale.loyaltyPointsRedeemed;
+        }
+        if (sale.paymentMethod === 'credit_account') {
+          customer.creditBalance = Math.max(0, customer.creditBalance - refund.refundAmount);
+        }
+        await customer.save();
+      }
+    }
+
     refund.status = 'processed';
     refund.processedAt = new Date();
     await refund.save();
 
-    // Mark sale refunded
-    await Sale.findByIdAndUpdate(refund.sale, { status: 'refunded' });
+    // 3. Mark sale refunded
+    sale.status = 'refunded';
+    await sale.save();
 
     await AuditLog.create({
       pharmacy: req.pharmacyId,
@@ -413,10 +477,10 @@ export const processRefund = async (req, res) => {
       userName: req.userFull?.name || 'Cashier',
       action: 'REFUND_PROCESSED',
       module: 'POS Billing',
-      details: `Processed refund of $${refund.refundAmount.toFixed(2)} for Invoice ${refund.invoiceNumber}`
+      details: `Processed refund of $${refund.refundAmount.toFixed(2)} for Invoice ${refund.invoiceNumber}. Inventory restored to batches.`
     });
 
-    res.json({ message: 'Refund processed successfully and sale updated', refund });
+    res.json({ message: 'Refund processed successfully, inventory restored and sale updated', refund });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

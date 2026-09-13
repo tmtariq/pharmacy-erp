@@ -1,12 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
-  "env": {
-    "MONGO_URI": "mongodb+srv://entermh07_db_user:password12345@cluster0.0g9n9mz.mongodb.net/pharmacy_erp?retryWrites=true&w=majority&appName=Cluster0",
-    "NODE_ENV": "production",
-    "JWT_ACCESS_SECRET": "super_secret_pharmacy_erp_access_key_2026",
-    "JWT_REFRESH_SECRET": "super_secret_pharmacy_erp_refresh_key_2026"
-  },
   "rewrites": [
     {
       "source": "/api/v1/(.*)",

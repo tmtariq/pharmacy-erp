@@ -2,7 +2,11 @@ import Settings from '../models/Settings.js';
 
 export const getSettings = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacyId || req.user?.pharmacy;
+    const pharmacyId = req.pharmacyId;
+    if (!pharmacyId) {
+      return res.status(403).json({ message: 'Pharmacy organization context required.' });
+    }
+
     let settings = await Settings.findOne({ pharmacy: pharmacyId });
 
     if (!settings) {
@@ -17,7 +21,11 @@ export const getSettings = async (req, res) => {
 
 export const updateSettings = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacyId || req.user?.pharmacy;
+    const pharmacyId = req.pharmacyId;
+    if (!pharmacyId) {
+      return res.status(403).json({ message: 'Pharmacy organization context required.' });
+    }
+
     const settings = await Settings.findOneAndUpdate(
       { pharmacy: pharmacyId },
       req.body,

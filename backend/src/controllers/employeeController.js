@@ -20,12 +20,16 @@ export const getEmployees = async (req, res) => {
 
 export const createEmployee = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacyId || req.user?.pharmacy;
+    const pharmacyId = req.pharmacyId;
+    if (!pharmacyId) {
+      return res.status(403).json({ message: 'Pharmacy organization context required.' });
+    }
+
     const { name, email, phone, role, shift, salary, branch } = req.body;
 
     const employee = await Employee.create({
       pharmacy: pharmacyId,
-      branch: branch || req.user?.branch,
+      branch: branch || req.branchId,
       name,
       email,
       phone,
@@ -43,7 +47,32 @@ export const createEmployee = async (req, res) => {
 export const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await Employee.findByIdAndUpdate(id, req.body, { new: true });
+    const pharmacyId = req.pharmacyId;
+    if (!pharmacyId) {
+      return res.status(403).json({ message: 'Pharmacy organization context required.' });
+    }
+
+    const { name, email, phone, role, shift, salary, branch, isActive } = req.body;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (role !== undefined) updateData.role = role;
+    if (shift !== undefined) updateData.shift = shift;
+    if (salary !== undefined) updateData.salary = salary;
+    if (branch !== undefined) updateData.branch = branch;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const updated = await Employee.findOneAndUpdate(
+      { _id: id, pharmacy: pharmacyId },
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Employee record not found in this pharmacy organization.' });
+    }
+
     res.json({ message: 'Employee updated', employee: updated });
   } catch (err) {
     res.status(400).json({ message: 'Failed to update employee: ' + err.message });

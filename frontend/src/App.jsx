@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/ui/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuperAdminProtectedRoute from './components/SuperAdminProtectedRoute';
 import FeatureProtectedRoute from './components/FeatureProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
@@ -42,9 +43,12 @@ function App() {
         {/* Dedicated SaaS Platform Admin Authentication */}
         <Route path="/saas-admin/login" element={<SaasAdminLogin />} />
         <Route path="/saas-admin" element={<Navigate to="/saas-admin/portal" replace />} />
-        <Route path="/saas-admin/portal" element={<SuperAdminDashboard />} />
-        <Route path="/saas-admin/approvals" element={<PendingApprovalsPage />} />
-        <Route path="/saas-admin/company/:pharmacyId" element={<CompanyDetailCenter />} />
+        <Route path="/superadmin" element={<Navigate to="/saas-admin/portal" replace />} />
+        <Route element={<SuperAdminProtectedRoute />}>
+          <Route path="/saas-admin/portal" element={<SuperAdminDashboard />} />
+          <Route path="/saas-admin/approvals" element={<PendingApprovalsPage />} />
+          <Route path="/saas-admin/company/:pharmacyId" element={<CompanyDetailCenter />} />
+        </Route>
 
         {/* ERP SaaS Homepage & Public Routes */}
         <Route path="/" element={<LandingPage />} />

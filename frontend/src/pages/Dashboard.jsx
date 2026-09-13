@@ -42,7 +42,7 @@ const Dashboard = () => {
   }, [activeBranchId, fetchDashboardData, user?.role]);
 
   if (user?.role === 'SuperAdmin') {
-    return <Navigate to="/superadmin" replace />;
+    return <Navigate to="/saas-admin/portal" replace />;
   }
 
   if (loading) {
