@@ -64,8 +64,8 @@ export const updateTransferStatus = async (req, res) => {
 
     // If status changes to 'received', deduct batch from fromBranch and add to toBranch!
     if (status === 'received' && transfer.status !== 'received') {
+      // 1. Pre-validation: ensure all items exist with sufficient stock in origin branch
       for (const item of transfer.items) {
-        // Deduct from source branch batch
         const sourceBatch = await Batch.findOne({
           pharmacy: req.pharmacyId,
           branch: transfer.fromBranch,
@@ -73,13 +73,34 @@ export const updateTransferStatus = async (req, res) => {
           batchNumber: item.batchNumber
         });
 
-        if (sourceBatch) {
-          sourceBatch.quantity = Math.max(0, sourceBatch.quantity - item.quantity);
-          if (sourceBatch.quantity === 0) sourceBatch.status = 'exhausted';
+        if (!sourceBatch || sourceBatch.quantity < item.quantity) {
+          return res.status(400).json({
+            message: `Cannot receive transfer: Insufficient inventory in origin branch for batch '${item.batchNumber}'. Available: ${sourceBatch?.quantity || 0}, Required: ${item.quantity}.`
+          });
+        }
+      }
+
+      // 2. Perform atomic batch deductions and target increments
+      for (const item of transfer.items) {
+        // Atomic deduction from source branch batch
+        const sourceBatch = await Batch.findOneAndUpdate(
+          {
+            pharmacy: req.pharmacyId,
+            branch: transfer.fromBranch,
+            medicine: item.medicine,
+            batchNumber: item.batchNumber,
+            quantity: { $gte: item.quantity }
+          },
+          { $inc: { quantity: -item.quantity } },
+          { new: true }
+        );
+
+        if (sourceBatch && sourceBatch.quantity === 0) {
+          sourceBatch.status = 'exhausted';
           await sourceBatch.save();
         }
 
-        // Add to target branch batch (create or increment)
+        // Add to target branch batch (create or increment atomically)
         let targetBatch = await Batch.findOne({
           pharmacy: req.pharmacyId,
           branch: transfer.toBranch,
@@ -97,7 +118,7 @@ export const updateTransferStatus = async (req, res) => {
             pharmacy: req.pharmacyId,
             branch: transfer.toBranch,
             batchNumber: item.batchNumber,
-            expiryDate: item.expiryDate,
+            expiryDate: item.expiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             costPrice: item.costPrice || 0,
             sellingPrice: item.sellingPrice || 0,
             mrp: item.mrp || 0,

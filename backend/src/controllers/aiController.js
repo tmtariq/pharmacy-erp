@@ -1,5 +1,7 @@
 import Medicine from '../models/Medicine.js';
 
+const escapeRegex = (string) => (typeof string === 'string' ? string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '');
+
 // Pharmacological Drug Interaction Dataset Rules
 const INTERACTION_DATABASE = [
   {
@@ -63,9 +65,10 @@ export const suggestGenericAlternatives = async (req, res) => {
       return res.status(400).json({ message: 'Generic name is required' });
     }
 
+    const sanitized = escapeRegex(genericName.trim());
     const alternatives = await Medicine.find({
       pharmacy: req.pharmacyId,
-      genericName: { $regex: new RegExp(genericName, 'i') }
+      genericName: { $regex: new RegExp(sanitized, 'i') }
     }).select('name genericName category price stock manufacturer');
 
     res.status(200).json({

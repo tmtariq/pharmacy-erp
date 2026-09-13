@@ -10,10 +10,27 @@ export const getCustomers = async (req, res) => {
   }
 };
 
+const ALLOWED_CUSTOMER_FIELDS = [
+  'name', 'profilePhoto', 'phone', 'email', 'address', 'city', 'country',
+  'dateOfBirth', 'gender', 'emergencyContact', 'allergies', 'medicalNotes',
+  'savedAddresses', 'medicineReminders'
+];
+
+const filterCustomerBody = (body) => {
+  const filtered = {};
+  for (const field of ALLOWED_CUSTOMER_FIELDS) {
+    if (body[field] !== undefined) {
+      filtered[field] = body[field];
+    }
+  }
+  return filtered;
+};
+
 export const createCustomer = async (req, res) => {
   try {
+    const payload = filterCustomerBody(req.body || {});
     const customer = await Customer.create({
-      ...req.body,
+      ...payload,
       pharmacy: req.pharmacyId
     });
     res.status(201).json(customer);
@@ -24,9 +41,10 @@ export const createCustomer = async (req, res) => {
 
 export const updateCustomer = async (req, res) => {
   try {
+    const payload = filterCustomerBody(req.body || {});
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, pharmacy: req.pharmacyId },
-      req.body,
+      { $set: payload },
       { new: true, runValidators: true }
     );
     if (!customer) {

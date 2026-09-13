@@ -19,6 +19,6 @@ router.get('/pharmacist-dashboard', authorizeRoles('Owner', 'Admin', 'Branch Man
 router.get('/inventory-dashboard', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager', 'InventoryManager'), getInventoryDashboard);
 router.get('/sales-dashboard', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Sales Staff', 'SalesStaff'), getSalesStaffDashboard);
 router.get('/cashier-dashboard', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Cashier'), getCashierDashboard);
-router.get('/audit-logs', getAuditLogs);
+router.get('/audit-logs', authorizeRoles('Owner', 'Admin'), getAuditLogs);
 
 export default router;

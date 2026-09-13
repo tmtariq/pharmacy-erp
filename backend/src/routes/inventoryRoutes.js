@@ -16,22 +16,22 @@ router.use(protect, attachTenant, subscriptionGatekeeper);
 
 // Categories
 router.get('/categories', getCategories);
-router.post('/categories', createCategory);
+router.post('/categories', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), createCategory);
 
 // Suppliers
 router.get('/suppliers', getSuppliers);
-router.post('/suppliers', createSupplier);
+router.post('/suppliers', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), createSupplier);
 
 // Medicines
 router.get('/medicines', getMedicines);
-router.post('/medicines', createMedicine);
-router.put('/medicines/:id', updateMedicine);
+router.post('/medicines', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), createMedicine);
+router.put('/medicines/:id', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), updateMedicine);
 router.delete('/medicines/:id', authorizeRoles('Owner', 'Admin'), deleteMedicine);
 
 // Batches (FEFO inventory)
 router.get('/batches', getBatches);
-router.post('/batches', addBatch);
-router.put('/batches/:id', updateBatch);
+router.post('/batches', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), addBatch);
+router.put('/batches/:id', authorizeRoles('Owner', 'Admin', 'Branch Manager', 'Inventory Manager'), updateBatch);
 router.delete('/batches/:id', authorizeRoles('Owner', 'Admin'), deleteBatch);
 
 export default router;

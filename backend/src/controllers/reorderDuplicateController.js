@@ -6,6 +6,8 @@ import Sale from '../models/Sale.js';
 import Supplier from '../models/Supplier.js';
 import AuditLog from '../models/AuditLog.js';
 
+const escapeRegex = (string) => (typeof string === 'string' ? string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '');
+
 // GET /api/v1/reorder - Get All Reorder Suggestions & Priority Summaries
 export const getReorderDashboard = async (req, res) => {
   try {
@@ -18,29 +20,40 @@ export const getReorderDashboard = async (req, res) => {
     const medicines = await Medicine.find({ pharmacy: pharmacyId }).populate('category').populate('supplier');
     const batches = await Batch.find(filter);
 
-    // Sales over last 30 days for daily velocity
+    // Sales aggregation over last 30 days for daily velocity (scalable & memory-safe)
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const recentSales = await Sale.find({
-      ...filter,
-      createdAt: { $gte: thirtyDaysAgo },
-      status: 'completed'
-    });
+
+    const salesAggregation = await Sale.aggregate([
+      {
+        $match: {
+          ...filter,
+          createdAt: { $gte: thirtyDaysAgo },
+          status: 'completed'
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.medicine',
+          totalSold: { $sum: '$items.quantity' }
+        }
+      }
+    ]);
+
+    const salesVelocityMap = new Map();
+    for (const record of salesAggregation) {
+      if (record._id) {
+        salesVelocityMap.set(record._id.toString(), record.totalSold || 0);
+      }
+    }
 
     const reorders = [];
 
     for (const med of medicines) {
-      const medBatches = batches.filter(b => b.medicine.toString() === med._id.toString());
+      const medBatches = batches.filter(b => b.medicine && b.medicine.toString() === med._id.toString());
       const currentStock = medBatches.reduce((acc, b) => acc + (b.status === 'active' ? b.quantity : 0), 0);
-
-      let totalSold30 = 0;
-      for (const sale of recentSales) {
-        for (const item of sale.items) {
-          if (item.medicine && item.medicine.toString() === med._id.toString()) {
-            totalSold30 += item.quantity;
-          }
-        }
-      }
+      const totalSold30 = salesVelocityMap.get(med._id.toString()) || 0;
 
       const avgDailySales = totalSold30 > 0 ? Number((totalSold30 / 30).toFixed(2)) : 0.5;
       const remainingDays = avgDailySales > 0 ? Math.round(currentStock / avgDailySales) : 99;
@@ -237,9 +250,10 @@ export const checkDuplicateRealtime = async (req, res) => {
     }
 
     if (genericName) {
+      const sanitized = escapeRegex(genericName.trim());
       const existingGeneric = await Medicine.findOne({
         pharmacy: req.pharmacyId,
-        genericName: { $regex: new RegExp(`^${genericName.trim()}$`, 'i') }
+        genericName: { $regex: new RegExp(`^${sanitized}$`, 'i') }
       });
       if (existingGeneric) {
         return res.json({
